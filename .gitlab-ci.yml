@@ -1,6 +1,6 @@
 stages:
 - build
-- test
+- publish
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
