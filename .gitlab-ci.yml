@@ -1,7 +1,3 @@
-# Need to setup arm64 docker images.
-# ubuntu:focal-20210827
-# linux/arm64/v8
-
 stages:
 - build
 - test
@@ -9,30 +5,11 @@ stages:
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   BUILD_FOLDER: build
-    #DOCKER_IMAGE: arm64v8/ubuntu:focal
-    #DOCKER_IMAGE: adferrand/snapcraft:arm64v8-candidate
   DOCKER_IMAGE: unoplatform/snapcraft:20201014-arm64
   SNAPCRAFT_LOGIN: $(cat .cicd.env.var)
 cache: &global_cache
   key: ${CI_JOB_NAME}
   policy: pull-push
-ubuntu:devel:
-  stage: build
-  script:
-  - apt-get update -qq
-  - apt-get install -y -qq qemu-user-static
-    #  script:
-    #  - mkdir $BUILD_FOLDER
-    #  - cmake -B$BUILD_FOLDER -H. $CMAKE_BUILD_OPTIONS
-    #  - make VERBOSE=1 -C $BUILD_FOLDER
-    #  only:
-    #    refs:
-    #    - master
-    #    - tags
-    #    - merge_requests
-    #    - web
-    #    - schedules
-
 snap:build:
   variables:
     RELEASE_TYPE: edge
@@ -44,7 +21,8 @@ snap:build:
   - export SNAP_ARCH=arm64
   - export SNAPCRAFT_BUILD_INFO=1
   - apt-get -y update
-  - apt-get install -yq git build-essential
+    #- apt-get install -yq git build-essential
+  - echo $SNAPCRAFT_LOGIN | base64 -d > snapcraft.login && snapcraft login --with snapcraft.login
   - snapcraft --destructive-mode
     #- SNAPCRAFT_SETUP_CORE=1 snapcraft --destructive-mode
     #- |
@@ -55,8 +33,7 @@ snap:build:
     #    snapcraft logout
     #  fi
     #  script:
-  - echo $SNAPCRAFT_LOGIN | base64 -d > snapcraft.login && snapcraft login --with snapcraft.login
-  - snapcraft push *.snap --release $RELEASE_TYPE
+  - snapcraft push cryptnox*.snap --release $RELEASE_TYPE
   - snapcraft logout && rm snapcraft.login
     #  rules:
     #- if: '$CI_COMMIT_REF_NAME == "master" && $CI_COMMIT_TAG'
@@ -86,20 +63,6 @@ snap:build:
 # - build
 # - publish
 
-  #build-docker:
-  #  image: docker:19
-  #  stage: prepare
-  #  services:
-  #  - docker:19-dind
-  #  tags:
-  #  - generic_privileged
-  #  variables:
-  #    DOCKER_DRIVER: overlay2
-  #  script:
-  #  - docker pull $CONTAINER_IMAGE:$CONTAINER_TAG || true
-  #  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.e.foundation:5000
-  #  - docker build --cache-from $CONTAINER_IMAGE:$CONTAINER_TAG -t $CONTAINER_IMAGE:$CONTAINER_TAG .
-  #  - docker push $CONTAINER_IMAGE:$CONTAINER_TAG
 
   #build-ubuntu:
   #  image: registry.gitlab.e.foundation:5000/e/tools/easy-installer:stable
