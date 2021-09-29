@@ -94,10 +94,10 @@ layout:
 
 parts:
   pcscd:
-    source: pcsc-lite-1.9.3.tar.bz2
-       #source: https://pcsclite.apdu.fr/files/pcsc-lite-1.9.3.tar.bz2
-      #source: https://salsa.debian.org/rousseau/PCSC.git
-      #source-tag: 1.9.0
+    #source: pcsc-lite-1.9.3.tar.bz2
+    source: https://pcsclite.apdu.fr/files/pcsc-lite-1.9.3.tar.bz2
+    #source: https://salsa.debian.org/rousseau/PCSC.git
+    #source-tag: 1.9.0
     plugin: autotools
     #configflags:
     #  - -includedir=${prefix}/include
@@ -125,19 +125,19 @@ parts:
     stage-packages:
       - libusb-1.0-0
   acsccid:
-    source: acsccid-1.1.8.tar.bz2
-    #source: .
+    #source: acsccid-1.1.8.tar.bz2
+    source: .
     plugin: autotools
     autotools-configure-parameters:
       - --prefix=/usr/
     after: [ pcscd ]
-    #    override-pull: |
-    #      snapcraftctl pull
-    #      # get the latest upstream version
-    #      SF_URL="https://sourceforge.net/projects/acsccid/files/acsccid"
-    #      VER="$(wget -O- -q $SF_URL | html2text | grep -A1 Parent_folder | tail -1 | sed 's/ .*$//')"
-    #      D_URL="https://sourceforge.net/projects/acsccid/files/acsccid/$VER/acsccid-$VER.tar.bz2"
-    #      wget -O- -q $D_URL | bzcat | tar x --strip-components=1
+        override-pull: |
+          snapcraftctl pull
+          # get the latest upstream version
+          SF_URL="https://sourceforge.net/projects/acsccid/files/acsccid"
+          VER="$(wget -O- -q $SF_URL | html2text | grep -A1 Parent_folder | tail -1 | sed 's/ .*$//')"
+          D_URL="https://sourceforge.net/projects/acsccid/files/acsccid/$VER/acsccid-$VER.tar.bz2"
+          wget -O- -q $D_URL | bzcat | tar x --strip-components=1
     organize:
       $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/acsccid/AUTHORS
       $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/acsccid/COPYING
@@ -152,8 +152,8 @@ parts:
     stage-packages:
       - libusb-1.0-0
   ccid:
-    source: ccid-1.4.35.tar.bz2
-    #source: https://ccid.apdu.fr/files/ccid-1.4.35.tar.bz2
+    #source: ccid-1.4.35.tar.bz2
+    source: https://ccid.apdu.fr/files/ccid-1.4.35.tar.bz2
     #source: https://salsa.debian.org/rousseau/CCID.git
     plugin: autotools
     autotools-configure-parameters:
@@ -168,8 +168,8 @@ parts:
       - libusb-1.0-0
   pcsc-tools:
     #source: https://salsa.debian.org/rousseau/pcsc-tools.git
-    #source: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/pcsc-tools-1.5.7.tar.bz2
-    source: pcsc-tools-1.5.7.tar.bz2
+    source: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/pcsc-tools-1.5.7.tar.bz2
+    #source: pcsc-tools-1.5.7.tar.bz2
     plugin: autotools
     after: [ ccid ]
     autotools-configure-parameters:
