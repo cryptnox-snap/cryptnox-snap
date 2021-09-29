@@ -13,8 +13,8 @@ description: |
   To buy NFC enabled cards that are supported by this library go to https://www.cryptnox.com/
 
 #grade: stable
-confinement: strict
-#confinement: devmode
+#confinement: strict
+confinement: devmode
 
 slots:
   socket:
@@ -131,7 +131,7 @@ parts:
     autotools-configure-parameters:
       - --prefix=/usr/
     after: [ pcscd ]
-        override-pull: |
+    override-pull: |
           snapcraftctl pull
           # get the latest upstream version
           SF_URL="https://sourceforge.net/projects/acsccid/files/acsccid"
