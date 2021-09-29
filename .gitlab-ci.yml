@@ -67,8 +67,10 @@ build-ubuntu:
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
   script:
+    - echo ${SNAPCRAFT_LOGIN_FILE} | base64 -d > snapcraft.login && snapcraft login --with snapcraft.login
     - snapcraft
     - ls
+    - snapcraft logout && rm snapcraft.login
   artifacts:
     name: "cryptnox"
     paths:
