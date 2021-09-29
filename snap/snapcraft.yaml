@@ -13,8 +13,8 @@ description: |
   To buy NFC enabled cards that are supported by this library go to https://www.cryptnox.com/
 
 #grade: stable
-#confinement: strict
-confinement: devmode
+confinement: strict
+#confinement: devmode
 
 slots:
   socket:
@@ -45,9 +45,11 @@ apps:
     environment:
       LANG: C.UTF-8
     plugs:
+      - hardware-observe
       - network
       - network-bind
       - raw-usb
+      - serial-port
   card:
     command: usr/bin/cryptnoxcard
     command-chain:
@@ -56,9 +58,11 @@ apps:
     environment:
       LANG: C.UTF-8
     plugs:
+      - hardware-observe
       - network
       - network-bind
       - raw-usb
+      - serial-port
   pcsc-scan:
     command: usr/bin/pcsc_scan
     command-chain:
@@ -67,10 +71,11 @@ apps:
     environment:
       LANG: C.UTF-8
     plugs:
+      - hardware-observe
       - network
       - network-bind
       - raw-usb
-
+      - serial-port
   scriptor:
     command: usr/bin/scriptor
     command-chain:
@@ -79,7 +84,11 @@ apps:
     environment:
       LANG: C.UTF-8
     plugs:
+      - hardware-observe
+      - network
+      - network-bind
       - raw-usb
+      - serial-port
 
         #/lib/pcsc/drivers:
 layout:
