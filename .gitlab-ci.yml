@@ -55,9 +55,9 @@ snap:build:
   - echo $SNAPCRAFT_LOGIN | base64 -d > snapcraft.login && snapcraft login --with snapcraft.login
   - snapcraft push *.snap --release $RELEASE_TYPE
   - snapcraft logout && rm snapcraft.login
-  rules:
-  - if: '$CI_COMMIT_REF_NAME == "master" && $CI_COMMIT_TAG'
-    when: manual
+    #  rules:
+    #- if: '$CI_COMMIT_REF_NAME == "master" && $CI_COMMIT_TAG'
+    #  when: manual
   allow_failure: false
   artifacts:
     paths:
