@@ -181,7 +181,7 @@ parts:
       - libgetopt-complete-perl
       - libpcsc-perl
       - wget
-      - libffi6
+        # - libffi6
     stage-snaps:
       - debian-multiarch-triplet-provider-launch
       - perl-launch
@@ -203,16 +203,16 @@ parts:
       - PYTHON_CFLAGS: -fPIC
       - PYTHON_CONFIGURE_OPTS: --enable-shared
     override-pull: |
-      #rm -rf /root/.pyenv
-      #curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+      rm -rf /root/.pyenv
+      curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
       #tar xvf  $SNAPCRAFT_PROJECT_DIR/pyenv-387.tar -C /root/
       echo "Remove ..."
       #rm -rf /root/.pyenv
       #bash  $SNAPCRAFT_PROJECT_DIR/pyenv-installer
     override-build: |
       eval "$(pyenv init --path)"
-      #pyenv update
-      #pyenv install --force 3.9.7
+      pyenv update
+      pyenv install --force 3.9.7
       pyenv global 3.9.7
       pip3 install --upgrade pip
     override-stage: |
@@ -237,8 +237,8 @@ parts:
     override-build: |
       eval "$(pyenv init --path)"
       pyenv global 3.9.7
-      #pip3 download --no-binary :all: pyscard
-      tar -xvf $SNAPCRAFT_PROJECT_DIR/pyscard*.tar*
+      python3 -m pip download --no-binary :all: pyscard
+      #tar -xvf $SNAPCRAFT_PROJECT_DIR/pyscard*.tar*
       cd pyscard-2.0.1
       patch setup.py $SNAPCRAFT_PROJECT_DIR/patch/pyscard-patch.patch
       python3 setup.py build
@@ -273,20 +273,26 @@ parts:
       export SKIP_GENERATE_AUTHORS=1
       export SKIP_WRITE_GIT_CHANGELOG=1
 
-      cd $SNAPCRAFT_PROJECT_DIR/cryptnoxpy-oss
-      #python3 -m pipenv install --dev
-      python3 -m pipenv lock --requirements
-      python3 -m pipenv lock --requirements --dev
-      pip3 install .
-      #python3 setup.py build
-      #python3 setup.py install
+      #python3 -m pip install git+ssh://git@github.com/Cryptnox-Software/cryptnoxpy.git
+      python3 -m pip install cryptnoxpy
+      python3 -m pip install cryptnoxcard
+      #pip3 download --no-binary :all: cryptnoxpy
+      #pip3 download --no-binary :all: cryptnoxcard
 
-      cd $SNAPCRAFT_PROJECT_DIR/cryptnox-card
-      python3 -m pipenv lock --requirements
-      python3 -m pipenv lock --requirements --dev
-      pip3 install .
-      #python3 setup.py build
-      #python3 setup.py install
+      # FILE TO URL # cd $SNAPCRAFT_PROJECT_DIR/cryptnoxpy-oss
+      # FILE TO URL # #python3 -m pipenv install --dev
+      # FILE TO URL # python3 -m pipenv lock --requirements
+      # FILE TO URL # python3 -m pipenv lock --requirements --dev
+      # FILE TO URL # pip3 install .
+      # FILE TO URL # #python3 setup.py build
+      # FILE TO URL # #python3 setup.py install
+
+      # FILE TO URL # cd $SNAPCRAFT_PROJECT_DIR/cryptnox-card
+      # FILE TO URL # python3 -m pipenv lock --requirements
+      # FILE TO URL # python3 -m pipenv lock --requirements --dev
+      # FILE TO URL # pip3 install .
+      # FILE TO URL # #python3 setup.py build
+      # FILE TO URL # #python3 setup.py install
       
     override-stage: |
       snapcraftctl stage
