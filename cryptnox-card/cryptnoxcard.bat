@@ -1,0 +1,1 @@
+powershell "./cryptnoxcard.exe --verbose | tee cryptnoxcard.log"
