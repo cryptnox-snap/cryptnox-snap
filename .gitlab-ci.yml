@@ -21,7 +21,6 @@ snap:build:
   - export SNAP_ARCH=arm64
   - export SNAPCRAFT_BUILD_INFO=1
   - apt-get -y update
-    #- apt-get install -yq git build-essential
   - echo $SNAPCRAFT_LOGIN | base64 -d > snapcraft.login && snapcraft login --with snapcraft.login
   - snapcraft --destructive-mode
     #- SNAPCRAFT_SETUP_CORE=1 snapcraft --destructive-mode
