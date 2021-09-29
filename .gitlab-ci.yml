@@ -9,7 +9,9 @@ stages:
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   BUILD_FOLDER: build
-  DOCKER_IMAGE: arm64v8/ubuntu:focal
+    #DOCKER_IMAGE: arm64v8/ubuntu:focal
+    #DOCKER_IMAGE: adferrand/snapcraft:arm64v8-candidate
+  DOCKER_IMAGE: unoplatform/snapcraft:20201014-arm64
   SNAPCRAFT_LOGIN: $(cat .cicd.env.var)
 cache: &global_cache
   key: ${CI_JOB_NAME}
@@ -34,7 +36,7 @@ ubuntu:devel:
 snap:build:
   variables:
     RELEASE_TYPE: edge
-  image: arm64v8/ubuntu:focal
+  image: unoplatform/snapcraft:20201014-arm64
   stage: build
   script:
   - export LC_ALL=C.UTF-8
@@ -42,7 +44,7 @@ snap:build:
   - export SNAP_ARCH=arm64
   - export SNAPCRAFT_BUILD_INFO=1
   - apt-get -y update
-  - apt-get install -yq git snapcraft build-essential
+  - apt-get install -yq git build-essential
   - snapcraft --destructive-mode
     #- SNAPCRAFT_SETUP_CORE=1 snapcraft --destructive-mode
     #- |
