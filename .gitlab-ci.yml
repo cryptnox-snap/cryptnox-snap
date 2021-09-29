@@ -64,6 +64,7 @@ variables:
 build-ubuntu:
   stage: build
   image: unoplatform/snapcraft:20201014-arm64
+  variables:
     GIT_SUBMODULE_STRATEGY: recursive
   script:
     - snapcraft
