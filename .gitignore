@@ -1,5 +1,6 @@
 build
 Cargo.lock
+.cicd.env.var
 .coverage**
 demos/*/parts/
 demos/*/prime/
