@@ -20,7 +20,6 @@ architectures:
   - build-on: arm64
     run-on: arm64
 
-
 slots:
   socket:
     interface: content
@@ -44,9 +43,9 @@ apps:
         socket-mode: 0666
   python:
     command: usr/bin/python
-    command-chain:
-      - bin/debian-multiarch-triplet-provider-launch
-      - bin/perl-launch
+      #    command-chain:
+      #      - bin/debian-multiarch-triplet-provider-launch
+      #      - bin/perl-launch
     environment:
       LANG: C.UTF-8
     plugs:
@@ -57,9 +56,9 @@ apps:
       - serial-port
   card:
     command: usr/bin/cryptnoxcard
-    command-chain:
-      - bin/debian-multiarch-triplet-provider-launch
-      - bin/perl-launch
+      #    command-chain:
+      #      - bin/debian-multiarch-triplet-provider-launch
+      #      - bin/perl-launch
     environment:
       LANG: C.UTF-8
     plugs:
@@ -70,9 +69,9 @@ apps:
       - serial-port
   pcsc-scan:
     command: usr/bin/pcsc_scan
-    command-chain:
-      - bin/debian-multiarch-triplet-provider-launch
-      - bin/perl-launch
+      #    command-chain:
+      #      - bin/debian-multiarch-triplet-provider-launch
+      #      - bin/perl-launch
     environment:
       LANG: C.UTF-8
     plugs:
@@ -81,20 +80,20 @@ apps:
       - network-bind
       - raw-usb
       - serial-port
-  scriptor:
-    command: usr/bin/scriptor
-    command-chain:
-      - bin/debian-multiarch-triplet-provider-launch
-      - bin/perl-launch
-    environment:
-      LANG: C.UTF-8
-    plugs:
-      - hardware-observe
-      - network
-      - network-bind
-      - raw-usb
-      - serial-port
-
+        #  scriptor:
+        #    command: usr/bin/scriptor
+        #    command-chain:
+        #      - bin/debian-multiarch-triplet-provider-launch
+        #      - bin/perl-launch
+        #    environment:
+        #      LANG: C.UTF-8
+        #    plugs:
+        #      - hardware-observe
+        #      - network
+        #      - network-bind
+        #      - raw-usb
+        #      - serial-port
+        #
         #/lib/pcsc/drivers:
 layout:
   /usr/lib/pcsc/drivers:
@@ -195,10 +194,10 @@ parts:
       - libgetopt-complete-perl
       - libpcsc-perl
       - wget
-        # - libffi6
-    stage-snaps:
-      - debian-multiarch-triplet-provider-launch
-      - perl-launch
+        #
+        #    stage-snaps:
+        #      - debian-multiarch-triplet-provider-launch
+        #      - perl-launch
   python:
     after: [pcsc-tools]
     plugin: nil
