@@ -16,6 +16,11 @@ description: |
 confinement: strict
 #confinement: devmode
 
+architectures:
+  - build-on: arm64
+    run-on: arm64
+
+
 slots:
   socket:
     interface: content
@@ -248,7 +253,8 @@ parts:
       pyenv global 3.9.7
       python3 -m pip download --no-binary :all: pyscard
       #tar -xvf $SNAPCRAFT_PROJECT_DIR/pyscard*.tar*
-      cd pyscard-2.0.1
+      tar -xvf pyscard*.tar*
+      cd pyscard-2.0.2
       patch setup.py $SNAPCRAFT_PROJECT_DIR/patch/pyscard-patch.patch
       python3 setup.py build
       python3 setup.py install
