@@ -12,13 +12,23 @@ description: |
 
   To buy NFC enabled cards that are supported by this library go to https://www.cryptnox.com/
 
-#grade: stable
+grade: stable
 confinement: strict
 #confinement: devmode
 
 architectures:
   - build-on: arm64
     run-on: arm64
+
+  - build-on: amd64
+    run-on: amd64
+
+  - build-on: i386
+    run-on: i386
+
+  - build-on: armhf
+    run-on: armhf
+#    build-error: ignore
 
 slots:
   socket:
@@ -94,7 +104,7 @@ apps:
         #      - raw-usb
         #      - serial-port
         #
-        #/lib/pcsc/drivers:
+#/lib/pcsc/drivers:
 layout:
   /usr/lib/pcsc/drivers:
     bind: $SNAP/usr/lib/pcsc/drivers
@@ -103,7 +113,7 @@ layout:
   /etc/wgetrc:
     bind-file: $SNAP/etc/wgetrc
   /etc/modprobe.d/blacklist-pn533.conf:
-    bind-file: $SNAP/etc/modprobe.d/blacklist-pn533.conf
+    symlink: $SNAP/etc/modprobe.d/blacklist-pn533.conf
 
 parts:
   pcscd:
@@ -331,7 +341,7 @@ parts:
       [ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
       snapcraftctl set-version "$stamp-$version"
       snapcraftctl set-grade "$grade"
-    override-prime: |
-     set -eux 
-     mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
-     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533.conf
+      #    override-prime: |
+      #     set -eux 
+      #     mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
+      #     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533.conf
