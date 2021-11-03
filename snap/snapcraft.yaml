@@ -16,19 +16,21 @@ grade: stable
 confinement: strict
 #confinement: devmode
 
-architectures:
-  - build-on: arm64
-    run-on: arm64
-
-  - build-on: amd64
-    run-on: amd64
-
-  - build-on: i386
-    run-on: i386
-
-  - build-on: armhf
-    run-on: armhf
-#    build-error: ignore
+  #architectures:
+  #    - build-on: amd64
+  #      run-on: amd64
+  #  - build-on: arm64
+  #    run-on: arm64
+  #
+  #  - build-on: amd64
+  #    run-on: amd64
+  #
+  #  - build-on: i386
+  #    run-on: i386
+  #
+  #  - build-on: armhf
+  #    run-on: armhf
+  ##    build-error: ignore
 
 slots:
   socket:
@@ -51,11 +53,12 @@ apps:
       pcscd-socket:
         listen-stream: $SNAP_COMMON/pcscd/pcscd.comm
         socket-mode: 0666
+
   python:
     command: usr/bin/python
-      #    command-chain:
-      #      - bin/debian-multiarch-triplet-provider-launch
-      #      - bin/perl-launch
+    command-chain:
+      - bin/debian-multiarch-triplet-provider-launch
+      - bin/perl-launch
     environment:
       LANG: C.UTF-8
     plugs:
@@ -66,9 +69,9 @@ apps:
       - serial-port
   card:
     command: usr/bin/cryptnoxcard
-      #    command-chain:
-      #      - bin/debian-multiarch-triplet-provider-launch
-      #      - bin/perl-launch
+    command-chain:
+      - bin/debian-multiarch-triplet-provider-launch
+      - bin/perl-launch
     environment:
       LANG: C.UTF-8
     plugs:
@@ -79,9 +82,9 @@ apps:
       - serial-port
   pcsc-scan:
     command: usr/bin/pcsc_scan
-      #    command-chain:
-      #      - bin/debian-multiarch-triplet-provider-launch
-      #      - bin/perl-launch
+    command-chain:
+      - bin/debian-multiarch-triplet-provider-launch
+      - bin/perl-launch
     environment:
       LANG: C.UTF-8
     plugs:
@@ -112,8 +115,8 @@ layout:
     bind: $SNAP/var/lib/usbutils
   /etc/wgetrc:
     bind-file: $SNAP/etc/wgetrc
-  /etc/modprobe.d/blacklist-pn533.conf:
-    symlink: $SNAP/etc/modprobe.d/blacklist-pn533.conf
+      #  /etc/modprobe.d/blacklist-pn533.conf:
+      #    symlink: $SNAP/etc/modprobe.d/blacklist-pn533.conf
 
 parts:
   pcscd:
@@ -204,10 +207,9 @@ parts:
       - libgetopt-complete-perl
       - libpcsc-perl
       - wget
-        #
-        #    stage-snaps:
-        #      - debian-multiarch-triplet-provider-launch
-        #      - perl-launch
+    stage-snaps:
+      - debian-multiarch-triplet-provider-launch
+      - perl-launch
   python:
     after: [pcsc-tools]
     plugin: nil
