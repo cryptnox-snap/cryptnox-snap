@@ -1,8 +1,6 @@
 name: cryptnox
 base: core20
 adopt-info: cryptnox-clean
-#version-script: tail -n1 $SNAPCRAFT_PROJECT_DIR/cryptnox-card-master/cryptnoxcard/version.py | cut -d'"' -f2 
-#adopt-info: python-cryptnox
 summary: Cryptnox Card
 description: |
   A command line user interface to manage and use of Cryptnox cards.
@@ -14,23 +12,21 @@ description: |
 
 grade: stable
 confinement: strict
-#confinement: devmode
+  #confinement: devmode
 
-  #architectures:
-  #    - build-on: amd64
-  #      run-on: amd64
-  #  - build-on: arm64
-  #    run-on: arm64
-  #
-  #  - build-on: amd64
-  #    run-on: amd64
-  #
-  #  - build-on: i386
-  #    run-on: i386
-  #
-  #  - build-on: armhf
-  #    run-on: armhf
-  ##    build-error: ignore
+architectures:
+    - build-on: amd64
+      run-on: amd64
+
+    - build-on: arm64
+      run-on: arm64
+  
+    - build-on: i386
+      run-on: i386
+  
+    - build-on: armhf
+      run-on: armhf
+  #    build-error: ignore
 
 slots:
   socket:
@@ -45,10 +41,18 @@ apps:
     daemon: simple
     plugs:
       - hardware-observe
+      - network-manager-observe
+      - network-observe
       - network
       - network-bind
       - raw-usb
+      - raw-input
       - serial-port
+      - home
+      - x11
+      - mount-observe
+      - removable-media
+
     sockets:
       pcscd-socket:
         listen-stream: $SNAP_COMMON/pcscd/pcscd.comm
@@ -63,10 +67,18 @@ apps:
       LANG: C.UTF-8
     plugs:
       - hardware-observe
+      - network-manager-observe
+      - network-observe
       - network
       - network-bind
       - raw-usb
+      - raw-input
       - serial-port
+      - home
+      - x11
+      - mount-observe
+      - removable-media
+
   card:
     command: usr/bin/cryptnoxcard
     command-chain:
@@ -76,10 +88,20 @@ apps:
       LANG: C.UTF-8
     plugs:
       - hardware-observe
+      - network-manager-observe
+      - network-observe
       - network
       - network-bind
       - raw-usb
+      - raw-input
       - serial-port
+      - system-backup
+      - log-observe
+      - mount-observe
+      - removable-media
+      - home
+      - x11
+
   pcsc-scan:
     command: usr/bin/pcsc_scan
     command-chain:
@@ -89,25 +111,20 @@ apps:
       LANG: C.UTF-8
     plugs:
       - hardware-observe
+      - network-manager-observe
+      - network-observe
       - network
       - network-bind
       - raw-usb
+      - raw-input
       - serial-port
-        #  scriptor:
-        #    command: usr/bin/scriptor
-        #    command-chain:
-        #      - bin/debian-multiarch-triplet-provider-launch
-        #      - bin/perl-launch
-        #    environment:
-        #      LANG: C.UTF-8
-        #    plugs:
-        #      - hardware-observe
-        #      - network
-        #      - network-bind
-        #      - raw-usb
-        #      - serial-port
-        #
-#/lib/pcsc/drivers:
+      - system-backup
+      - log-observe
+      - mount-observe
+      - removable-media
+      - home
+      - x11
+
 layout:
   /usr/lib/pcsc/drivers:
     bind: $SNAP/usr/lib/pcsc/drivers
@@ -116,18 +133,12 @@ layout:
   /etc/wgetrc:
     bind-file: $SNAP/etc/wgetrc
       #  /etc/modprobe.d/blacklist-pn533.conf:
-      #    symlink: $SNAP/etc/modprobe.d/blacklist-pn533.conf
-
+      #    bind-file: $SNAP/etc/modprobe.d/blacklist-pn533.conf
+      
 parts:
   pcscd:
-    #source: pcsc-lite-1.9.3.tar.bz2
-    source: https://pcsclite.apdu.fr/files/pcsc-lite-1.9.3.tar.bz2
-    #source: https://salsa.debian.org/rousseau/PCSC.git
-    #source-tag: 1.9.0
+    source: https://pcsclite.apdu.fr/files/pcsc-lite-1.9.4.tar.bz2
     plugin: autotools
-    #configflags:
-    #  - -includedir=${prefix}/include
-    #  - -includedir=/usr/include
     autotools-configure-parameters:
       - --prefix=/usr/
       - --includedir=/usr/include
@@ -150,6 +161,7 @@ parts:
       - libusb-1.0-0-dev
     stage-packages:
       - libusb-1.0-0
+
   acsccid:
     #source: acsccid-1.1.8.tar.bz2
     source: .
@@ -177,9 +189,10 @@ parts:
       - pkg-config
     stage-packages:
       - libusb-1.0-0
+
   ccid:
     #source: ccid-1.4.35.tar.bz2
-    source: https://ccid.apdu.fr/files/ccid-1.4.35.tar.bz2
+    source: https://ccid.apdu.fr/files/ccid-1.4.36.tar.bz2
     #source: https://salsa.debian.org/rousseau/CCID.git
     plugin: autotools
     autotools-configure-parameters:
@@ -192,6 +205,7 @@ parts:
       - libusb-1.0-0-dev
     stage-packages:
       - libusb-1.0-0
+
   pcsc-tools:
     #source: https://salsa.debian.org/rousseau/pcsc-tools.git
     source: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/pcsc-tools-1.5.7.tar.bz2
@@ -210,6 +224,7 @@ parts:
     stage-snaps:
       - debian-multiarch-triplet-provider-launch
       - perl-launch
+
   python:
     after: [pcsc-tools]
     plugin: nil
@@ -230,10 +245,6 @@ parts:
     override-pull: |
       rm -rf /root/.pyenv
       curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-      #tar xvf  $SNAPCRAFT_PROJECT_DIR/pyenv-387.tar -C /root/
-      echo "Remove ..."
-      #rm -rf /root/.pyenv
-      #bash  $SNAPCRAFT_PROJECT_DIR/pyenv-installer
     override-build: |
       eval "$(pyenv init --path)"
       pyenv update
@@ -246,6 +257,7 @@ parts:
     override-prime: |
       snapcraftctl prime
       rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_PRIME/usr/
+
   python-deps:
     plugin: nil
     after: [ python ]
@@ -266,7 +278,7 @@ parts:
       #tar -xvf $SNAPCRAFT_PROJECT_DIR/pyscard*.tar*
       tar -xvf pyscard*.tar*
       cd pyscard-2.0.2
-      patch setup.py $SNAPCRAFT_PROJECT_DIR/patch/pyscard-patch.patch
+      patch setup.py $SNAPCRAFT_PROJECT_DIR/local/pyscard-patch.patch
       python3 setup.py build
       python3 setup.py install
     override-stage: |
@@ -275,6 +287,7 @@ parts:
     override-prime: |
       snapcraftctl prime
       rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_PRIME/usr/
+
   python-cryptnox:
     plugin: nil
     source: .
@@ -299,33 +312,16 @@ parts:
       export SKIP_GENERATE_AUTHORS=1
       export SKIP_WRITE_GIT_CHANGELOG=1
 
-      #python3 -m pip install git+ssh://git@github.com/Cryptnox-Software/cryptnoxpy.git
       python3 -m pip install cryptnoxpy
       python3 -m pip install cryptnoxcard
-      #pip3 download --no-binary :all: cryptnoxpy
-      #pip3 download --no-binary :all: cryptnoxcard
 
-      # FILE TO URL # cd $SNAPCRAFT_PROJECT_DIR/cryptnoxpy-oss
-      # FILE TO URL # #python3 -m pipenv install --dev
-      # FILE TO URL # python3 -m pipenv lock --requirements
-      # FILE TO URL # python3 -m pipenv lock --requirements --dev
-      # FILE TO URL # pip3 install .
-      # FILE TO URL # #python3 setup.py build
-      # FILE TO URL # #python3 setup.py install
-
-      # FILE TO URL # cd $SNAPCRAFT_PROJECT_DIR/cryptnox-card
-      # FILE TO URL # python3 -m pipenv lock --requirements
-      # FILE TO URL # python3 -m pipenv lock --requirements --dev
-      # FILE TO URL # pip3 install .
-      # FILE TO URL # #python3 setup.py build
-      # FILE TO URL # #python3 setup.py install
-      
     override-stage: |
       snapcraftctl stage
       rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
     override-prime: |
       snapcraftctl prime
       rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_PRIME/usr/
+
   clean:
     plugin: nil
     after: [python-cryptnox]
@@ -333,17 +329,29 @@ parts:
      set -eux
      cd $SNAPCRAFT_PRIME/
      find . -type f -exec sed -i 's|/root/.pyenv/versions/3.9.7/bin/python3|/snap/cryptnox/current/usr/bin/python3|g' {} \;
+
   cryptnox-clean:
     plugin: nil
     after: [ clean ]
     override-pull: |
       snapcraftctl pull
       stamp=$(date +%Y%M%d-%H%M%S)
-      version="$(git describe --always | sed -e 's/-/+git/;y/-/./')"
-      [ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
-      snapcraftctl set-version "$stamp-$version"
-      snapcraftctl set-grade "$grade"
+      #version="$(git describe --always | sed -e 's/-/+git/;y/-/./')"
+      #[ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
+      #snapcraftctl set-version "$stamp-$version"
+      snapcraftctl set-version "$stamp"
+      #snapcraftctl set-grade "$grade"
       #    override-prime: |
       #     set -eux 
       #     mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
       #     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533.conf
+hooks:
+  install:
+      plugs:
+        - network
+  connect-plug-raw-usb:
+      plugs:
+        - raw-usb
+  connect-plug-hardware-observe:
+      plugs:
+        - hardware-observe

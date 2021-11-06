@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 # we need both interfaces connected, so drop out if the other one is not
 # attached to the slot yet
