@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 # create a default config dir if it does not exist
 [ -d ${SNAP_COMMON}/reader.conf.d ] || mkdir ${SNAP_COMMON}/reader.conf.d

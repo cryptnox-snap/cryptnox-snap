@@ -10,6 +10,33 @@ description: |
 
   To buy NFC enabled cards that are supported by this library go to https://www.cryptnox.com/
 
+  please connect devices acceess 
+
+    snap connect cryptnox:hardware-observe
+    snap connect cryptnox:raw-usb
+
+  removal media for access
+
+    snap connect cryptnox:mount-observe
+    snap connect cryptnox:removable-media
+
+  please check
+
+    snap connections cryptnox
+
+  or devmode
+
+    snap install cryptnox --devmode
+
+  test 
+
+    snap services cryptnox
+    snap restart cryptnox.pcscd
+    cryptnox.pcsc-scan
+    cryptnox.card
+
+
+
 grade: stable
 confinement: strict
   #confinement: devmode
@@ -17,7 +44,7 @@ confinement: strict
 architectures:
     - build-on: amd64
       run-on: amd64
-
+ 
     - build-on: arm64
       run-on: arm64
   
@@ -34,14 +61,12 @@ slots:
     content: pcscd-socket
     write:
       - $SNAP_COMMON/pcscd
-
 apps:
   pcscd:
     command: usr/sbin/pcscd --foreground --auto-exit
     daemon: simple
     plugs:
       - hardware-observe
-      - network-manager-observe
       - network-observe
       - network
       - network-bind
@@ -63,11 +88,11 @@ apps:
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
+        # - bin/wrapper
     environment:
       LANG: C.UTF-8
     plugs:
       - hardware-observe
-      - network-manager-observe
       - network-observe
       - network
       - network-bind
@@ -84,19 +109,17 @@ apps:
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
+        # - bin/wrapper
     environment:
       LANG: C.UTF-8
     plugs:
       - hardware-observe
-      - network-manager-observe
       - network-observe
       - network
       - network-bind
       - raw-usb
       - raw-input
       - serial-port
-      - system-backup
-      - log-observe
       - mount-observe
       - removable-media
       - home
@@ -107,20 +130,16 @@ apps:
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
+      # - bin/wrapper
     environment:
       LANG: C.UTF-8
     plugs:
       - hardware-observe
-      - network-manager-observe
       - network-observe
       - network
       - network-bind
       - raw-usb
       - raw-input
-      - serial-port
-      - system-backup
-      - log-observe
-      - mount-observe
       - removable-media
       - home
       - x11
@@ -132,8 +151,8 @@ layout:
     bind: $SNAP/var/lib/usbutils
   /etc/wgetrc:
     bind-file: $SNAP/etc/wgetrc
-      #  /etc/modprobe.d/blacklist-pn533.conf:
-      #    bind-file: $SNAP/etc/modprobe.d/blacklist-pn533.conf
+      #  /etc/modprobe.d/blacklist-pn533_usb.conf:
+      #    bind-file: $SNAP/etc/modprobe.d/blacklist-pn533_usb.conf
       
 parts:
   pcscd:
@@ -191,9 +210,7 @@ parts:
       - libusb-1.0-0
 
   ccid:
-    #source: ccid-1.4.35.tar.bz2
     source: https://ccid.apdu.fr/files/ccid-1.4.36.tar.bz2
-    #source: https://salsa.debian.org/rousseau/CCID.git
     plugin: autotools
     autotools-configure-parameters:
       - --prefix=/usr/
@@ -207,9 +224,7 @@ parts:
       - libusb-1.0-0
 
   pcsc-tools:
-    #source: https://salsa.debian.org/rousseau/pcsc-tools.git
     source: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/pcsc-tools-1.5.7.tar.bz2
-    #source: pcsc-tools-1.5.7.tar.bz2
     plugin: autotools
     after: [ ccid ]
     autotools-configure-parameters:
@@ -250,7 +265,7 @@ parts:
       pyenv update
       pyenv install --force 3.9.7
       pyenv global 3.9.7
-      pip3 install --upgrade pip
+      python3 -m pip install --upgrade pip
     override-stage: |
       snapcraftctl stage
       rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
@@ -275,10 +290,10 @@ parts:
       eval "$(pyenv init --path)"
       pyenv global 3.9.7
       python3 -m pip download --no-binary :all: pyscard
-      #tar -xvf $SNAPCRAFT_PROJECT_DIR/pyscard*.tar*
       tar -xvf pyscard*.tar*
       cd pyscard-2.0.2
-      patch setup.py $SNAPCRAFT_PROJECT_DIR/local/pyscard-patch.patch
+      wget https://gist.githubusercontent.com/kokoye2007/73b0e3bf3b16d3b712b8550c33ee9c59/raw/4b02c45307d8cc94b60d8d9c41cbeda21547dc38/pyscard-patch.patch
+      patch setup.py ./pyscard-patch.patch
       python3 setup.py build
       python3 setup.py install
     override-stage: |
@@ -306,12 +321,18 @@ parts:
       eval "$(pyenv init --path)"
       pyenv global 3.9.7
       python3 -m pip install --upgrade pipenv
+      python3 -m pip install --upgrade pip
 
       export PBR_VERSION=1.1.2
       export SKIP_GIT_SDIST=1
       export SKIP_GENERATE_AUTHORS=1
       export SKIP_WRITE_GIT_CHANGELOG=1
 
+      arch=$(uname -i) 
+      [[ $arch == arm* ]] && echo 'This is ARM Architecture' && \
+      python3 -m pip install cryptography --no-binary cryptography
+      # curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |  sh  && \
+      
       python3 -m pip install cryptnoxpy
       python3 -m pip install cryptnoxcard
 
@@ -335,7 +356,7 @@ parts:
     after: [ clean ]
     override-pull: |
       snapcraftctl pull
-      stamp=$(date +%Y%M%d-%H%M%S)
+      stamp=$(date +%Y%m%d-%H%M%S)
       #version="$(git describe --always | sed -e 's/-/+git/;y/-/./')"
       #[ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
       #snapcraftctl set-version "$stamp-$version"
@@ -344,14 +365,18 @@ parts:
       #    override-prime: |
       #     set -eux 
       #     mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
-      #     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533.conf
-hooks:
-  install:
-      plugs:
-        - network
-  connect-plug-raw-usb:
-      plugs:
-        - raw-usb
+      #     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533_usb.conf
+
+hooks: 
+  install: 
+    plugs: 
+      - raw-usb
+      - hardware-observe
+      - network
+      - network-bind
+  connect-plug-raw-usb: 
+    plugs: 
+      - raw-usb 
   connect-plug-hardware-observe:
-      plugs:
-        - hardware-observe
+    plugs: 
+      - hardware-observe

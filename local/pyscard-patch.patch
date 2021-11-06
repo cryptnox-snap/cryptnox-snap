@@ -1,5 +1,5 @@
 From 6dd501199c1323a49f2e64e75c886a1d0b652577 Mon Sep 17 00:00:00 2001
-From: Dag Heyman <dag@yubico.com>
+From: kokoye2007 <kokoye2007@gmail.com>
 Date: Thu, 20 Feb 2020 18:05:59 +0100
 Subject: [PATCH] setup.py: add typical snapcraft location of PCSC
 
