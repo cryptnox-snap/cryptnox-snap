@@ -3,7 +3,7 @@ name: Build and Release Cryptnox Snap
 on:
   push:
     branches:
-    - master
+    - release
  
 jobs:
   build-stable:
