@@ -1,5 +1,5 @@
 name: cryptnox
-base: core20
+base: core18
 adopt-info: cryptnox-clean
 summary: Cryptnox Card
 description: |
@@ -71,8 +71,6 @@ apps:
       - network
       - network-bind
       - raw-usb
-      - raw-input
-      - serial-port
       - home
       - x11
       - mount-observe
@@ -88,17 +86,15 @@ apps:
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
-        # - bin/wrapper
     environment:
-      LANG: C.UTF-8
+      LANG: en_US.UTF-8
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/
     plugs:
       - hardware-observe
       - network-observe
       - network
       - network-bind
       - raw-usb
-      - raw-input
-      - serial-port
       - home
       - x11
       - mount-observe
@@ -109,17 +105,15 @@ apps:
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
-        # - bin/wrapper
     environment:
-      LANG: C.UTF-8
+      LANG: en_US.UTF-8
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/
     plugs:
       - hardware-observe
       - network-observe
       - network
       - network-bind
       - raw-usb
-      - raw-input
-      - serial-port
       - mount-observe
       - removable-media
       - home
@@ -130,16 +124,15 @@ apps:
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
-      # - bin/wrapper
     environment:
-      LANG: C.UTF-8
+      LANG: en_US.UTF-8
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/
     plugs:
       - hardware-observe
       - network-observe
       - network
       - network-bind
       - raw-usb
-      - raw-input
       - removable-media
       - home
       - x11
@@ -158,7 +151,7 @@ parts:
   pcscd:
     source: https://pcsclite.apdu.fr/files/pcsc-lite-1.9.4.tar.bz2
     plugin: autotools
-    autotools-configure-parameters:
+    configflags:
       - --prefix=/usr/
       - --includedir=/usr/include
       - --enable-ipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
@@ -182,10 +175,9 @@ parts:
       - libusb-1.0-0
 
   acsccid:
-    #source: acsccid-1.1.8.tar.bz2
     source: .
     plugin: autotools
-    autotools-configure-parameters:
+    configflags:
       - --prefix=/usr/
     after: [ pcscd ]
     override-pull: |
@@ -212,7 +204,7 @@ parts:
   ccid:
     source: https://ccid.apdu.fr/files/ccid-1.4.36.tar.bz2
     plugin: autotools
-    autotools-configure-parameters:
+    configflags:
       - --prefix=/usr/
     after: [ acsccid ]
     organize:
@@ -224,10 +216,10 @@ parts:
       - libusb-1.0-0
 
   pcsc-tools:
-    source: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/pcsc-tools-1.5.7.tar.bz2
+    source: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/pcsc-tools-1.5.8.tar.bz2
     plugin: autotools
     after: [ ccid ]
-    autotools-configure-parameters:
+    configflags:
       - --prefix=/usr/
       - --includedir=/usr/include
     organize:
@@ -253,6 +245,7 @@ parts:
       - libffi-dev
       - libreadline-dev
       - libsqlite3-dev
+      - libc6
     build-environment:
       - PATH: /root/.pyenv/bin:$PATH
       - PYTHON_CFLAGS: -fPIC
@@ -266,6 +259,7 @@ parts:
       pyenv install --force 3.9.7
       pyenv global 3.9.7
       python3 -m pip install --upgrade pip
+      python3 -m pip install --upgrade pipenv
     override-stage: |
       snapcraftctl stage
       rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
@@ -289,6 +283,8 @@ parts:
     override-build: |
       eval "$(pyenv init --path)"
       pyenv global 3.9.7
+      python3 -m pip install --upgrade pipenv
+      python3 -m pip install --upgrade pip
       python3 -m pip download --no-binary :all: pyscard
       tar -xvf pyscard*.tar*
       cd pyscard-2.0.2
@@ -366,17 +362,3 @@ parts:
       #     set -eux 
       #     mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
       #     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533_usb.conf
-
-hooks: 
-  install: 
-    plugs: 
-      - raw-usb
-      - hardware-observe
-      - network
-      - network-bind
-  connect-plug-raw-usb: 
-    plugs: 
-      - raw-usb 
-  connect-plug-hardware-observe:
-    plugs: 
-      - hardware-observe
