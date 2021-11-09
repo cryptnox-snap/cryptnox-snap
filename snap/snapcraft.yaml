@@ -1,5 +1,5 @@
 name: cryptnox
-base: core20
+base: core18
 adopt-info: cryptnox-clean
 summary: Cryptnox Card
 description: |
@@ -61,39 +61,22 @@ slots:
     content: pcscd-socket
     write:
       - $SNAP_COMMON/pcscd
+
+        #plugs:
+        #  raw-usb:
+
 apps:
-  pcscd:
-    command: usr/sbin/pcscd --foreground --auto-exit
-    daemon: simple
-    plugs:
-      - hardware-observe
-      - network-observe
-      - network
-      - network-bind
-      - raw-usb
-      - raw-input
-      - serial-port
-      - home
-      - x11
-      - mount-observe
-      - removable-media
-
-    sockets:
-      pcscd-socket:
-        listen-stream: $SNAP_COMMON/pcscd/pcscd.comm
-        socket-mode: 0666
-
   python:
     command: usr/bin/python
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
-        # - bin/wrapper
     environment:
       LANG: C.UTF-8
+      LD_LIBRARY_PATH: $SNAP/lib
+      LD_LIBRARY_PATH: $SNAP/usr/lib
     plugs:
       - hardware-observe
-      - network-observe
       - network
       - network-bind
       - raw-usb
@@ -101,6 +84,7 @@ apps:
       - serial-port
       - home
       - x11
+      - pcscd
       - mount-observe
       - removable-media
 
@@ -109,12 +93,12 @@ apps:
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
-        # - bin/wrapper
     environment:
       LANG: C.UTF-8
+      LD_LIBRARY_PATH: $SNAP/lib
+      LD_LIBRARY_PATH: $SNAP/usr/lib
     plugs:
       - hardware-observe
-      - network-observe
       - network
       - network-bind
       - raw-usb
@@ -122,6 +106,7 @@ apps:
       - serial-port
       - mount-observe
       - removable-media
+      - pcscd
       - home
       - x11
 
@@ -130,23 +115,22 @@ apps:
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
-      # - bin/wrapper
     environment:
       LANG: C.UTF-8
     plugs:
       - hardware-observe
-      - network-observe
       - network
       - network-bind
       - raw-usb
       - raw-input
       - removable-media
+      - pcscd
       - home
       - x11
 
 layout:
   /usr/lib/pcsc/drivers:
-    bind: $SNAP/usr/lib/pcsc/drivers
+    bind: $SNAP/lib/pcsc/drivers
   /var/lib/usbutils:
     bind: $SNAP/var/lib/usbutils
   /etc/wgetrc:
@@ -155,10 +139,27 @@ layout:
       #    bind-file: $SNAP/etc/modprobe.d/blacklist-pn533_usb.conf
       
 parts:
+  #  libpcsclite:
+  #    plugin: nil
+  #    stage-snaps:
+  #      - pcsc-daemon
+  #    stage: # we only need the libs and headers
+  #      - lib
+  #      - include
+  #    prime: # do not ship headers in binary snap, just libs
+  #      - lib/libpcsclite*
+  #      - -include
+
   pcscd:
-    source: https://pcsclite.apdu.fr/files/pcsc-lite-1.9.4.tar.bz2
-    plugin: autotools
-    autotools-configure-parameters:
+    override-pull: |
+      snapcraftctl pull
+      D_URL="https://pcsclite.apdu.fr/files/"
+      VER="$(wget -O- -q $D_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+      echo "$VER"
+      echo "$D_URL$VER"
+      D_FILE="$D_URL$VER"
+      wget -O- -q $D_FILE | bzcat | tar x --strip-components=1
+    configflags:
       - --prefix=/usr/
       - --includedir=/usr/include
       - --enable-ipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
@@ -182,10 +183,9 @@ parts:
       - libusb-1.0-0
 
   acsccid:
-    #source: acsccid-1.1.8.tar.bz2
     source: .
     plugin: autotools
-    autotools-configure-parameters:
+    configflags:
       - --prefix=/usr/
     after: [ pcscd ]
     override-pull: |
@@ -210,9 +210,17 @@ parts:
       - libusb-1.0-0
 
   ccid:
-    source: https://ccid.apdu.fr/files/ccid-1.4.36.tar.bz2
+    source: .
     plugin: autotools
-    autotools-configure-parameters:
+    override-pull: |
+      snapcraftctl pull
+      C_URL="https://ccid.apdu.fr/files/"
+      VER="$(wget -O- -q $C_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+      echo "$VER"
+      echo "$C_URL$VER"
+      C_FILE="$C_URL$VER"
+      wget -O- -q $C_FILE | bzcat | tar x --strip-components=1
+    configflags:
       - --prefix=/usr/
     after: [ acsccid ]
     organize:
@@ -224,12 +232,29 @@ parts:
       - libusb-1.0-0
 
   pcsc-tools:
-    source: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/pcsc-tools-1.5.7.tar.bz2
+    source: .
     plugin: autotools
     after: [ ccid ]
-    autotools-configure-parameters:
+    override-pull: |
+      snapcraftctl pull
+      T_URL="http://ludovic.rousseau.free.fr/softwares/pcsc-tools/"
+      VER="$(wget -O- -q $T_URL | html2text | grep -A3 'Source Download' | tail -1 | awk '{print $5}' )"
+      echo "$VER"
+      echo "$T_URL$VER"
+      T_FILE="$T_URL$VER"
+      wget -O- -q $T_FILE | bzcat | tar x --strip-components=1
+    configflags:
       - --prefix=/usr/
       - --includedir=/usr/include
+    build-packages:
+      - html2text
+      - tar
+      - wget
+      - libusb-1.0-0-dev
+      - flex
+      - perl
+      - pkg-config
+
     organize:
       $SNAPCRAFT_PART_SRC/LICENCE: usr/share/doc/pcsc-tools/LICENSE
     stage-packages:
@@ -257,6 +282,8 @@ parts:
       - PATH: /root/.pyenv/bin:$PATH
       - PYTHON_CFLAGS: -fPIC
       - PYTHON_CONFIGURE_OPTS: --enable-shared
+    stage-packages:
+      - libc6
     override-pull: |
       rm -rf /root/.pyenv
       curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
@@ -292,8 +319,7 @@ parts:
       python3 -m pip download --no-binary :all: pyscard
       tar -xvf pyscard*.tar*
       cd pyscard-2.0.2
-      wget https://gist.githubusercontent.com/kokoye2007/73b0e3bf3b16d3b712b8550c33ee9c59/raw/4b02c45307d8cc94b60d8d9c41cbeda21547dc38/pyscard-patch.patch
-      patch setup.py ./pyscard-patch.patch
+      patch setup.py $SNAPCRAFT_PROJECT_DIR/local/pyscard-patch.patch
       python3 setup.py build
       python3 setup.py install
     override-stage: |
@@ -329,8 +355,8 @@ parts:
       export SKIP_WRITE_GIT_CHANGELOG=1
 
       arch=$(uname -i) 
-      [[ $arch == arm* ]] && echo 'This is ARM Architecture' && \
-      python3 -m pip install cryptography --no-binary cryptography
+      #[[ $arch == arm* ]] && echo 'This is ARM Architecture' && \
+      #python3 -m pip install cryptography --no-binary cryptography
       # curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |  sh  && \
       
       python3 -m pip install cryptnoxpy
@@ -356,7 +382,8 @@ parts:
     after: [ clean ]
     override-pull: |
       snapcraftctl pull
-      stamp=$(date +%Y%m%d-%H%M%S)
+      stamp=$(date +%Y%m%d)
+      #stamp=$(date +%Y%m%d-%H%M%S)
       #version="$(git describe --always | sed -e 's/-/+git/;y/-/./')"
       #[ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
       #snapcraftctl set-version "$stamp-$version"
@@ -366,17 +393,3 @@ parts:
       #     set -eux 
       #     mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
       #     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533_usb.conf
-
-hooks: 
-  install: 
-    plugs: 
-      - raw-usb
-      - hardware-observe
-      - network
-      - network-bind
-  connect-plug-raw-usb: 
-    plugs: 
-      - raw-usb 
-  connect-plug-hardware-observe:
-    plugs: 
-      - hardware-observe
