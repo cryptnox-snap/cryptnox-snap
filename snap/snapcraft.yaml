@@ -1,7 +1,6 @@
 name: cryptnox
 base: core18
-  #adopt-info: cryptnox-clean
-adopt-info: pcscd
+adopt-info: cryptnox-clean
 summary: Cryptnox Card
 description: |
   A command line user interface to manage and use of Cryptnox cards.
@@ -62,6 +61,10 @@ slots:
     content: pcscd-socket
     write:
       - $SNAP_COMMON/pcscd
+
+plugs:
+  raw-usb:
+    allow-auto-connection: true
 
 apps:
   pcscd:
@@ -135,7 +138,7 @@ apps:
 
 layout:
   /usr/lib/pcsc/drivers:
-    bind: $SNAP/lib/pcsc/drivers
+    bind: $SNAP/usr/lib/pcsc/drivers
   /var/lib/usbutils:
     bind: $SNAP/var/lib/usbutils
   /etc/wgetrc:
