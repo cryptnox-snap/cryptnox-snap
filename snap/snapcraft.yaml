@@ -1,6 +1,7 @@
 name: cryptnox
 base: core18
-adopt-info: cryptnox-clean
+  #adopt-info: cryptnox-clean
+adopt-info: pcscd
 summary: Cryptnox Card
 description: |
   A command line user interface to manage and use of Cryptnox cards.
@@ -62,10 +63,23 @@ slots:
     write:
       - $SNAP_COMMON/pcscd
 
-        #plugs:
-        #  raw-usb:
-
 apps:
+  pcscd:
+    command: usr/sbin/pcscd --foreground --auto-exit
+    daemon: simple
+    plugs:
+      - hardware-observe
+      - network
+      - network-bind
+      - raw-usb
+      - raw-input
+      - serial-port
+
+    sockets:
+      pcscd-socket:
+        listen-stream: $SNAP_COMMON/pcscd/pcscd.comm
+        socket-mode: 0666
+
   python:
     command: usr/bin/python
     command-chain:
@@ -82,9 +96,6 @@ apps:
       - raw-usb
       - raw-input
       - serial-port
-      - home
-      - x11
-      - pcscd
       - mount-observe
       - removable-media
 
@@ -106,9 +117,6 @@ apps:
       - serial-port
       - mount-observe
       - removable-media
-      - pcscd
-      - home
-      - x11
 
   pcsc-scan:
     command: usr/bin/pcsc_scan
@@ -124,9 +132,6 @@ apps:
       - raw-usb
       - raw-input
       - removable-media
-      - pcscd
-      - home
-      - x11
 
 layout:
   /usr/lib/pcsc/drivers:
@@ -139,18 +144,9 @@ layout:
       #    bind-file: $SNAP/etc/modprobe.d/blacklist-pn533_usb.conf
       
 parts:
-  #  libpcsclite:
-  #    plugin: nil
-  #    stage-snaps:
-  #      - pcsc-daemon
-  #    stage: # we only need the libs and headers
-  #      - lib
-  #      - include
-  #    prime: # do not ship headers in binary snap, just libs
-  #      - lib/libpcsclite*
-  #      - -include
-
   pcscd:
+    source: .
+    plugin: autotools
     override-pull: |
       snapcraftctl pull
       D_URL="https://pcsclite.apdu.fr/files/"
