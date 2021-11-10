@@ -42,17 +42,17 @@ confinement: strict
   #confinement: devmode
 
 architectures:
-    - build-on: amd64
-      run-on: amd64
- 
-    - build-on: arm64
-      run-on: arm64
-  
-    - build-on: i386
-      run-on: i386
+  #    - build-on: amd64
+  #      run-on: amd64
+  # 
+  #    - build-on: arm64
+  #      run-on: arm64
+  #  
+  #    - build-on: i386
+  #      run-on: i386
   
     - build-on: armhf
-      run-on: armhf
+  #    run-on: armhf
   #    build-error: ignore
 
 slots:
@@ -62,9 +62,9 @@ slots:
     write:
       - $SNAP_COMMON/pcscd
 
-plugs:
-  raw-usb:
-    allow-auto-connection: true
+        #plugs:
+        #  raw-usb:
+        #    allow-auto-connection: true
 
 apps:
   pcscd:
@@ -291,7 +291,9 @@ parts:
       pyenv update
       pyenv install --force 3.9.7
       pyenv global 3.9.7
-      python3 -m pip install --upgrade pip
+      python3 -m pip install --upgrade pipenv
+      python3 -m pip install --upgrade pip setuptools wheel
+
     override-stage: |
       snapcraftctl stage
       rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
@@ -345,8 +347,6 @@ parts:
     override-build: |
       eval "$(pyenv init --path)"
       pyenv global 3.9.7
-      python3 -m pip install --upgrade pipenv
-      python3 -m pip install --upgrade pip
 
       export PBR_VERSION=1.1.2
       export SKIP_GIT_SDIST=1
