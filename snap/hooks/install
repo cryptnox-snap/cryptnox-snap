@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# create a default config dir if it does not exist
+[ -d ${SNAP_COMMON}/reader.conf.d ] || mkdir ${SNAP_COMMON}/reader.conf.d
+
+# we install with the service disabled, the connect hooks for
+# hardware-observe and raw-usb will start it once both interfaces
+# are connected
+snapctl stop --disable ${SNAP_NAME}.pcscd 2>&1 || true

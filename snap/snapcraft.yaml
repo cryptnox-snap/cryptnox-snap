@@ -1,0 +1,418 @@
+name: cryptnox
+base: core20
+adopt-info: cryptnox-clean
+summary: Cryptnox Card
+description: |
+  A command line user interface to manage and use of Cryptnox cards.
+
+  This provides basic wallets for Bitcoin and Ethereum.
+  It is able to execute cleos commands and use the keys on the card for signing.
+
+  To buy NFC enabled cards that are supported by this library go to https://www.cryptnox.com/
+
+  please connect devices acceess 
+
+    snap connect cryptnox:hardware-observe
+    snap connect cryptnox:raw-usb
+
+  removal media for access
+
+    snap connect cryptnox:mount-observe
+    snap connect cryptnox:removable-media
+
+  please check
+
+    snap connections cryptnox
+
+  or devmode
+
+    snap install cryptnox --devmode
+
+  test 
+
+    snap services cryptnox
+    snap restart cryptnox.pcscd
+    cryptnox.pcsc-scan
+    cryptnox.card
+
+
+
+grade: stable
+confinement: strict
+  #confinement: devmode
+
+architectures:
+  - build-on: amd64
+    run-on: amd64
+  
+  - build-on: arm64
+    run-on: arm64
+  
+      #  - build-on: i386
+      #    run-on: i386
+  
+  - build-on: armhf
+    run-on: armhf
+  #    build-error: ignore
+
+slots:
+  socket:
+    interface: content
+    content: pcscd-socket
+    write:
+      - $SNAP_COMMON/pcscd
+apps:
+  pcscd:
+    command: usr/sbin/pcscd --foreground --auto-exit
+    daemon: simple
+    plugs:
+      - hardware-observe
+      - network
+      - network-bind
+      - raw-usb
+      - raw-input
+      - serial-port
+      - home
+      - x11
+      - mount-observe
+      - removable-media
+
+    sockets:
+      pcscd-socket:
+        listen-stream: $SNAP_COMMON/pcscd/pcscd.comm
+        socket-mode: 0666
+
+  python:
+    command: usr/bin/python
+    command-chain:
+      - bin/debian-multiarch-triplet-provider-launch
+      - bin/perl-launch
+        # - bin/wrapper
+    environment:
+      LANG: C.UTF-8
+    plugs:
+      - hardware-observe
+      - network
+      - network-bind
+      - raw-usb
+      - raw-input
+      - serial-port
+      - home
+      - x11
+      - mount-observe
+      - removable-media
+
+  card:
+    command: usr/bin/cryptnoxcard
+    command-chain:
+      - bin/debian-multiarch-triplet-provider-launch
+      - bin/perl-launch
+        # - bin/wrapper
+    environment:
+      LANG: C.UTF-8
+    plugs:
+      - hardware-observe
+      - network
+      - network-bind
+      - raw-usb
+      - raw-input
+      - serial-port
+      - mount-observe
+      - removable-media
+      - home
+      - x11
+
+  pcsc-scan:
+    command: usr/bin/pcsc_scan
+    command-chain:
+      - bin/debian-multiarch-triplet-provider-launch
+      - bin/perl-launch
+    environment:
+      LANG: C.UTF-8
+    plugs:
+      - hardware-observe
+      - network
+      - network-bind
+      - raw-usb
+      - raw-input
+      - removable-media
+      - home
+      - x11
+
+  demo:
+    command: usr/bin/demo
+    command-chain:
+      - bin/debian-multiarch-triplet-provider-launch
+      - bin/perl-launch
+        # - bin/wrapper
+    environment:
+      LANG: C.UTF-8
+    plugs:
+      - hardware-observe
+      - network
+      - network-bind
+      - raw-usb
+      - raw-input
+      - serial-port
+      - home
+      - x11
+      - mount-observe
+      - removable-media
+
+layout:
+  /usr/lib/pcsc/drivers:
+    bind: $SNAP/usr/lib/pcsc/drivers
+  /var/lib/usbutils:
+    bind: $SNAP/var/lib/usbutils
+  /etc/wgetrc:
+    bind-file: $SNAP/etc/wgetrc
+      
+parts:
+  pcscd:
+    source: .
+    plugin: autotools
+    override-pull: |
+      snapcraftctl pull
+      D_URL="https://pcsclite.apdu.fr/files/"
+      VER="$(wget -O- -q $D_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+      echo "$VER"
+      echo "$D_URL$VER"
+      D_FILE="$D_URL$VER"
+      wget -O- -q $D_FILE | bzcat | tar x --strip-components=1
+    autotools-configure-parameters:
+      - --prefix=/usr/
+      - --includedir=/usr/include
+      - --enable-ipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
+      - --enable-confdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/reader.conf.d
+    override-build: |
+      snapcraftctl build
+    organize:
+      $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
+      $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/pcscd/COPYING
+      $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/pcscd/AUTHORS
+      $SNAPCRAFT_PART_SRC/GPL-3.0.txt: usr/share/doc/pcscd/GPL-3.0.txt
+    build-packages:
+      - libsystemd-dev
+      - libudev-dev
+      - libusb-1.0-0-dev
+    stage-packages:
+      - libusb-1.0-0
+
+  acsccid:
+    source: .
+    plugin: autotools
+    autotools-configure-parameters:
+      - --prefix=/usr/
+    after: [ pcscd ]
+    override-pull: |
+          snapcraftctl pull
+          # get the latest upstream version
+          SF_URL="https://sourceforge.net/projects/acsccid/files/acsccid"
+          VER="$(wget -O- -q $SF_URL | html2text | grep -A1 Parent_folder | tail -1 | sed 's/ .*$//')"
+          D_URL="https://sourceforge.net/projects/acsccid/files/acsccid/$VER/acsccid-$VER.tar.bz2"
+          wget -O- -q $D_URL | bzcat | tar x --strip-components=1
+    organize:
+      $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/acsccid/AUTHORS
+      $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/acsccid/COPYING
+    build-packages:
+      - html2text
+      - tar
+      - wget
+      - libusb-1.0-0-dev
+      - flex
+      - perl
+      - pkg-config
+    stage-packages:
+      - libusb-1.0-0
+
+  ccid:
+    source: .
+    plugin: autotools
+    override-pull: |
+      snapcraftctl pull
+      C_URL="https://ccid.apdu.fr/files/"
+      VER="$(wget -O- -q $C_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+      echo "$VER"
+      echo "$C_URL$VER"
+      C_FILE="$C_URL$VER"
+      wget -O- -q $C_FILE | bzcat | tar x --strip-components=1
+    plugin: autotools
+    autotools-configure-parameters:
+      - --prefix=/usr/
+    after: [ acsccid ]
+    organize:
+      $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/ccid/AUTHORS
+      $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/ccid/COPYING
+    build-packages:
+      - libusb-1.0-0-dev
+    stage-packages:
+      - libusb-1.0-0
+
+  pcsc-tools:
+    source: .
+    plugin: autotools
+    after: [ ccid ]
+    override-pull: |
+      snapcraftctl pull
+      T_URL="http://ludovic.rousseau.free.fr/softwares/pcsc-tools/"
+      VER="$(wget -O- -q $T_URL | html2text | grep -A3 'Source Download' | tail -1 | awk '{print $5}' )"
+      echo "$VER"
+      echo "$T_URL$VER"
+      T_FILE="$T_URL$VER"
+      wget -O- -q $T_FILE | bzcat | tar x --strip-components=1
+    after: [ ccid ]
+    autotools-configure-parameters:
+      - --prefix=/usr/
+      - --includedir=/usr/include
+    organize:
+      $SNAPCRAFT_PART_SRC/LICENCE: usr/share/doc/pcsc-tools/LICENSE
+    stage-packages:
+      - libgetopt-complete-perl
+      - libpcsc-perl
+      - wget
+    stage-snaps:
+      - debian-multiarch-triplet-provider-launch
+      - perl-launch
+
+  python:
+    after: [pcsc-tools]
+    plugin: nil
+    build-packages:
+      - curl
+      - rsync
+      - git
+      - zlib1g-dev
+      - libbz2-dev
+      - libssl-dev
+      - libffi-dev
+      - libreadline-dev
+      - libsqlite3-dev
+    build-environment:
+      - PATH: /root/.pyenv/bin:$PATH
+      - PYTHON_CFLAGS: -fPIC
+      - PYTHON_CONFIGURE_OPTS: --enable-shared
+    override-pull: |
+      rm -rf /root/.pyenv
+      curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+    override-build: |
+      eval "$(pyenv init --path)"
+      pyenv update
+      pyenv install --force 3.9.7
+      pyenv global 3.9.7
+      python3 -m pip install --upgrade pip
+    override-stage: |
+      snapcraftctl stage
+      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
+    override-prime: |
+      snapcraftctl prime
+      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_PRIME/usr/
+
+  python-deps:
+    plugin: nil
+    after: [ python ]
+    build-packages:
+      - swig
+      - build-essential
+      - autoconf
+      - libtool
+      - pkg-config
+      - python3-dev
+      - python3-pip
+    build-environment:
+      - PATH: /root/.pyenv/bin:$PATH
+    override-build: |
+      eval "$(pyenv init --path)"
+      pyenv global 3.9.7
+      python3 -m pip download --no-binary :all: pyscard
+      tar -xvf pyscard*.tar*
+      cd pyscard-2.0.2
+      wget https://gist.githubusercontent.com/kokoye2007/73b0e3bf3b16d3b712b8550c33ee9c59/raw/4b02c45307d8cc94b60d8d9c41cbeda21547dc38/pyscard-patch.patch
+      patch setup.py ./pyscard-patch.patch
+      python3 setup.py build
+      python3 setup.py install
+    override-stage: |
+      snapcraftctl stage
+      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
+    override-prime: |
+      snapcraftctl prime
+      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_PRIME/usr/
+
+  python-cryptnox:
+    plugin: nil
+    source: .
+    after: [python-deps]
+    build-packages:
+      - swig
+      - build-essential
+      - autoconf
+      - libtool
+      - pkg-config
+      - python3-dev
+      - python3-pip
+    build-environment:
+      - PATH: /root/.pyenv/bin:$PATH
+    override-build: |
+      eval "$(pyenv init --path)"
+      pyenv global 3.9.7
+      python3 -m pip install --upgrade pipenv
+      python3 -m pip install --upgrade pip
+
+      export PBR_VERSION=1.1.2
+      export SKIP_GIT_SDIST=1
+      export SKIP_GENERATE_AUTHORS=1
+      export SKIP_WRITE_GIT_CHANGELOG=1
+
+      arch=$(uname -i) 
+      [[ $arch == arm* ]] && echo 'This is ARM Architecture' && \
+      python3 -m pip install cryptography --no-binary cryptography
+      
+      python3 -m pip install cryptnoxpy
+      python3 -m pip install cryptnoxcard
+
+    override-stage: |
+      snapcraftctl stage
+      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
+    override-prime: |
+      snapcraftctl prime
+      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_PRIME/usr/
+
+  clean:
+    plugin: nil
+    after: [python-cryptnox]
+    override-prime: |
+     set -eux
+     cd $SNAPCRAFT_PRIME/
+     find . -type f -exec sed -i 's|/root/.pyenv/versions/3.9.7/bin/python3|/snap/cryptnox/current/usr/bin/python3|g' {} \;
+
+  cryptnox-clean:
+    plugin: nil
+    after: [ clean ]
+    override-pull: |
+      snapcraftctl pull
+      stamp=$(date +%Y%m%d-%H%M%S)
+      #version="$(git describe --always | sed -e 's/-/+git/;y/-/./')"
+      #[ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
+      #snapcraftctl set-version "$stamp-$version"
+      snapcraftctl set-version "$stamp"
+      #snapcraftctl set-grade "$grade"
+    override-prime: |
+      set -eux 
+      path_data="SNAPCRAFT_PART_SRC SNAPCRAFT_PART_BUILD SNAPCRAFT_PART_INSTALL SNAPCRAFT_PRIME SNAPCRAFT_PROJECT_DIR SNAPCRAFT_STAGE"
+      for i in "$path_data"; do echo "$i" "\t\t\t" $"$i"; done
+      cp $SNAPCRAFT_PROJECT_DIR/local/demo $SNAPCRAFT_PRIME/usr/bin/demo
+      #     mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
+      #     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533_usb.conf
+
+hooks: 
+  install: 
+    plugs: 
+      - raw-usb
+      - hardware-observe
+      - network
+      - network-bind
+  connect-plug-raw-usb: 
+    plugs: 
+      - raw-usb 
+  connect-plug-hardware-observe:
+    plugs: 
+      - hardware-observe
