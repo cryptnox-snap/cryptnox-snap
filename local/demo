@@ -19,7 +19,7 @@ demo(){
 }
 
 blacklist(){
-	echo -e "" | sudo tee -a /etc/modprobe.d/pn533_usb.conf
+	echo -e "blacklist nfc\nblacklist pn533\nblacklist pn533_usb" | sudo tee -a /etc/modprobe.d/blacklist-pn533.conf
 	sudo modprobe -r pn533_usb
 	sudo modprobe -r pn533
 	sudo modprobe -r nfc
@@ -63,6 +63,4 @@ case $1 in
 		;;
 	*)
 		demo
-easc 		
-		
-
+esac
