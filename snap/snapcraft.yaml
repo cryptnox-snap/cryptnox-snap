@@ -48,11 +48,11 @@ architectures:
   - build-on: arm64
     run-on: arm64
   
-      #  - build-on: i386
-      #    run-on: i386
+  - build-on: i386
+    run-on: i386
   
-  - build-on: armhf
-    run-on: armhf
+  #  - build-on: armhf
+  #    run-on: armhf
   #    build-error: ignore
 
 slots:
@@ -397,8 +397,6 @@ parts:
       #snapcraftctl set-grade "$grade"
     override-prime: |
       set -eux 
-      path_data="SNAPCRAFT_PART_SRC SNAPCRAFT_PART_BUILD SNAPCRAFT_PART_INSTALL SNAPCRAFT_PRIME SNAPCRAFT_PROJECT_DIR SNAPCRAFT_STAGE"
-      for i in "$path_data"; do echo "$i" "\t\t\t" $"$i"; done
       cp $SNAPCRAFT_PROJECT_DIR/local/demo $SNAPCRAFT_PRIME/usr/bin/demo
       #     mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
       #     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533_usb.conf
