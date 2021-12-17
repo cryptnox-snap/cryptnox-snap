@@ -71,6 +71,7 @@ apps:
       - network-bind
       - raw-usb
       - raw-input
+      - i2c
       - serial-port
       - home
       - x11
@@ -101,6 +102,7 @@ apps:
       - x11
       - mount-observe
       - removable-media
+      - i2c
 
   card:
     command: usr/bin/cryptnoxcard
@@ -121,6 +123,7 @@ apps:
       - removable-media
       - home
       - x11
+      - i2c
 
   pcsc-scan:
     command: usr/bin/pcsc_scan
@@ -138,6 +141,7 @@ apps:
       - removable-media
       - home
       - x11
+      - i2c
 
   demo:
     command: usr/bin/demo
@@ -158,6 +162,7 @@ apps:
       - x11
       - mount-observe
       - removable-media
+      - i2c
 
 layout:
   /usr/lib/pcsc/drivers:
