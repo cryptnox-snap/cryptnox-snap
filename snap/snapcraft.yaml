@@ -143,27 +143,6 @@ apps:
       - x11
       - i2c
 
-  demo:
-    command: usr/bin/demo
-    command-chain:
-      - bin/debian-multiarch-triplet-provider-launch
-      - bin/perl-launch
-        # - bin/wrapper
-    environment:
-      LANG: C.UTF-8
-    plugs:
-      - hardware-observe
-      - network
-      - network-bind
-      - raw-usb
-      - raw-input
-      - serial-port
-      - home
-      - x11
-      - mount-observe
-      - removable-media
-      - i2c
-
 layout:
   /usr/lib/pcsc/drivers:
     bind: $SNAP/usr/lib/pcsc/drivers
@@ -400,22 +379,9 @@ parts:
       #snapcraftctl set-version "$stamp-$version"
       snapcraftctl set-version "$stamp"
       #snapcraftctl set-grade "$grade"
-    override-prime: |
-      set -eux 
-      cp $SNAPCRAFT_PROJECT_DIR/local/demo $SNAPCRAFT_PRIME/usr/bin/demo
-      #     mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
-      #     echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533_usb.conf
-
-hooks: 
-  install: 
-    plugs: 
-      - raw-usb
-      - hardware-observe
-      - network
-      - network-bind
-  connect-plug-raw-usb: 
-    plugs: 
-      - raw-usb 
-  connect-plug-hardware-observe:
-    plugs: 
-      - hardware-observe
+      #    override-prime: |
+      #      set -eux 
+      #      cp $SNAPCRAFT_PROJECT_DIR/local/demo $SNAPCRAFT_PRIME/usr/bin/demo
+      #      mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
+      #      echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533_usb.conf
+      #
