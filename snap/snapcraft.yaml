@@ -105,7 +105,7 @@ apps:
       - i2c
 
   card:
-    command: usr/bin/cryptnoxcard
+    command: usr/bin/cryptnox
     command-chain:
       - bin/debian-multiarch-triplet-provider-launch
       - bin/perl-launch
@@ -281,15 +281,15 @@ parts:
     override-build: |
       eval "$(pyenv init --path)"
       pyenv update
-      pyenv install --force 3.9.7
-      pyenv global 3.9.7
+      pyenv install --force 3.10.6
+      pyenv global 3.10.6
       python3 -m pip install --upgrade pip
     override-stage: |
       snapcraftctl stage
-      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
+      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_STAGE/usr/
     override-prime: |
       snapcraftctl prime
-      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_PRIME/usr/
+      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_PRIME/usr/
 
   python-deps:
     plugin: nil
@@ -306,20 +306,20 @@ parts:
       - PATH: /root/.pyenv/bin:$PATH
     override-build: |
       eval "$(pyenv init --path)"
-      pyenv global 3.9.7
-      python3 -m pip download --no-binary :all: pyscard
+      pyenv global 3.10.6
+      python3 -m pip download --no-binary :all: pyscard==2.0.3
       tar -xvf pyscard*.tar*
-      cd pyscard-2.0.2
-      wget https://gist.githubusercontent.com/kokoye2007/73b0e3bf3b16d3b712b8550c33ee9c59/raw/4b02c45307d8cc94b60d8d9c41cbeda21547dc38/pyscard-patch.patch
-      patch setup.py ./pyscard-patch.patch
+      cd pyscard-2.0.3
+      wget https://gist.githubusercontent.com/kokoye2007/75ef6722fb123257552dd4e7040fbb79/raw/3b0e420855316c41b98c6223cf0f5686d49f0378/pyscard-2.0.3-patch.patch
+      patch setup.py ./pyscard-2.0.3-patch.patch
       python3 setup.py build
       python3 setup.py install
     override-stage: |
       snapcraftctl stage
-      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
+      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_STAGE/usr/
     override-prime: |
       snapcraftctl prime
-      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_PRIME/usr/
+      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_PRIME/usr/
 
   python-cryptnox:
     plugin: nil
@@ -337,7 +337,7 @@ parts:
       - PATH: /root/.pyenv/bin:$PATH
     override-build: |
       eval "$(pyenv init --path)"
-      pyenv global 3.9.7
+      pyenv global 3.10.6
       python3 -m pip install --upgrade pipenv
       python3 -m pip install --upgrade pip
 
@@ -351,14 +351,14 @@ parts:
       python3 -m pip install cryptography --no-binary cryptography
       
       python3 -m pip install cryptnoxpy
-      python3 -m pip install cryptnoxcard
+      python3 -m pip install cryptnoxpro
 
     override-stage: |
       snapcraftctl stage
-      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_STAGE/usr/
+      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_STAGE/usr/
     override-prime: |
       snapcraftctl prime
-      rsync -a /root/.pyenv/versions/3.9.7/* $SNAPCRAFT_PRIME/usr/
+      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_PRIME/usr/
 
   clean:
     plugin: nil
@@ -366,7 +366,7 @@ parts:
     override-prime: |
      set -eux
      cd $SNAPCRAFT_PRIME/
-     find . -type f -exec sed -i 's|/root/.pyenv/versions/3.9.7/bin/python3|/snap/cryptnox/current/usr/bin/python3|g' {} \;
+     find . -type f -exec sed -i 's|/root/.pyenv/versions/3.10.6/bin/python3|/snap/cryptnox/current/usr/bin/python3|g' {} \;
 
   cryptnox-clean:
     plugin: nil
