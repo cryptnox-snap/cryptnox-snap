@@ -238,7 +238,8 @@ parts:
     after: [ ccid ]
     override-pull: |
       snapcraftctl pull
-      T_URL="http://ludovic.rousseau.free.fr/softwares/pcsc-tools/"
+      #      T_URL="http://ludovic.rousseau.free.fr/softwares/pcsc-tools/"
+      T_URL="https://pcsc-tools.apdu.fr/"
       VER="$(wget -O- -q $T_URL | html2text | grep -A3 'Source Download' | tail -1 | awk '{print $5}' )"
       echo "$VER"
       echo "$T_URL$VER"
