@@ -161,8 +161,20 @@ parts:
       VER="$(wget -O- -q $D_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
       echo "$VER"
       echo "$D_URL$VER"
+      # D_FILE="$D_URL$VER"
+      # wget -O- -q $D_FILE | xzcat | tar x --strip-components=1
       D_FILE="$D_URL$VER"
-      wget -O- -q $D_FILE | xzcat | tar x --strip-components=1
+      wget -O $VER -q $D_FILE
+      if [[ $VER == *.xz ]]; then
+        xzcat $VER | tar x --strip-components=1
+      elif [[ $VER == *.bz2 ]]; then
+        bzcat $VER | tar x --strip-components=1
+      elif [[ $VER == *.gz ]]; then
+        tar xzf $VER --strip-components=1
+      else
+        echo "Unsupported file format"
+        exit 1
+      fi
     autotools-configure-parameters:
       - --prefix=/usr/
       - --includedir=/usr/include
@@ -194,7 +206,20 @@ parts:
           SF_URL="https://sourceforge.net/projects/acsccid/files/acsccid"
           VER="$(wget -O- -q $SF_URL | html2text | grep -A1 Parent_folder | tail -1 | sed 's/ .*$//')"
           D_URL="https://sourceforge.net/projects/acsccid/files/acsccid/$VER/acsccid-$VER.tar.bz2"
-          wget -O- -q $D_URL | bzcat | tar x --strip-components=1
+          # wget -O- -q $D_URL | bzcat | tar x --strip-components=1
+          echo "$D_URL"
+          D_FILE="$D_URL"
+          wget -O $VER -q $D_FILE
+          if [[ $VER == *.xz ]]; then
+            xzcat $VER | tar x --strip-components=1
+          elif [[ $VER == *.bz2 ]]; then
+            bzcat $VER | tar x --strip-components=1
+          elif [[ $VER == *.gz ]]; then
+            tar xzf $VER --strip-components=1
+          else
+            echo "Unsupported file format"
+            exit 1
+          fi
     organize:
       $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/acsccid/AUTHORS
       $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/acsccid/COPYING
@@ -219,7 +244,20 @@ parts:
       echo "$VER"
       echo "$C_URL$VER"
       C_FILE="$C_URL$VER"
-      wget -O- -q $C_FILE | xzcat | tar x --strip-components=1
+      #wget -O- -q $C_FILE | xzcat | tar x --strip-components=1
+      echo "$C_URL$VER"
+      D_FILE="$C_URL$VER"
+      wget -O $VER -q $D_FILE
+      if [[ $VER == *.xz ]]; then
+        xzcat $VER | tar x --strip-components=1
+      elif [[ $VER == *.bz2 ]]; then
+        bzcat $VER | tar x --strip-components=1
+      elif [[ $VER == *.gz ]]; then
+        tar xzf $VER --strip-components=1
+      else
+        echo "Unsupported file format"
+        exit 1
+      fi
     autotools-configure-parameters:
       - --prefix=/usr/
     after: [ acsccid ]
@@ -243,7 +281,19 @@ parts:
       echo "$VER"
       echo "$T_URL$VER"
       T_FILE="$T_URL$VER"
-      wget -O- -q $T_FILE | bzcat | tar x --strip-components=1
+      # wget -O- -q $T_FILE | bzcat | tar x --strip-components=1
+      D_FILE="$T_URL$VER"
+      wget -O $VER -q $D_FILE
+      if [[ $VER == *.xz ]]; then
+        xzcat $VER | tar x --strip-components=1
+      elif [[ $VER == *.bz2 ]]; then
+        bzcat $VER | tar x --strip-components=1
+      elif [[ $VER == *.gz ]]; then
+        tar xzf $VER --strip-components=1
+      else
+        echo "Unsupported file format"
+        exit 1
+      fi
     autotools-configure-parameters:
       - --prefix=/usr/
       - --includedir=/usr/include
