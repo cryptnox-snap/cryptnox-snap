@@ -45,11 +45,11 @@ architectures:
   - build-on: amd64
     run-on: amd64
   
-  - build-on: arm64
-    run-on: arm64
+  # - build-on: arm64
+  #   run-on: arm64
   
-  - build-on: i386
-    run-on: i386
+  # - build-on: i386
+  #   run-on: i386
   
   #  - build-on: armhf
   #    run-on: armhf
@@ -152,17 +152,16 @@ layout:
     bind-file: $SNAP/etc/wgetrc
       
 parts:
+
   pcscd:
     source: .
-    plugin: autotools
+    plugin: meson
     override-pull: |
       snapcraftctl pull
       D_URL="https://pcsclite.apdu.fr/files/"
       VER="$(wget -O- -q $D_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
       echo "$VER"
       echo "$D_URL$VER"
-      # D_FILE="$D_URL$VER"
-      # wget -O- -q $D_FILE | xzcat | tar x --strip-components=1
       D_FILE="$D_URL$VER"
       wget -O $VER -q $D_FILE
       if [[ $VER == *.xz ]]; then
@@ -175,13 +174,19 @@ parts:
         echo "Unsupported file format"
         exit 1
       fi
-    autotools-configure-parameters:
-      - --prefix=/usr/
-      - --includedir=/usr/include
-      - --enable-ipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
-      - --enable-confdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/reader.conf.d
-    override-build: |
-      snapcraftctl build
+    meson-parameters:
+      - --prefix=/usr
+      - -Dipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
+      - -Dserialconfdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/reader.conf.d
+      - -Dusbdropdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/lib/pcsc/drivers
+      - -Dsystemdunit=system
+      - -Dpolkit=false  # Disable polkit for snap
+      - -Dlibudev=true
+      - -Dlibusb=false  # Using libudev instead
+      - -Dembedded=false
+      - -Dfilter_names=true
+      - -Dserial=true
+      - -Dusb=true
     organize:
       $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
       $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/pcscd/COPYING
@@ -191,8 +196,61 @@ parts:
       - libsystemd-dev
       - libudev-dev
       - libusb-1.0-0-dev
+      - pkg-config
+      - meson
+      - ninja-build
+      - flex
     stage-packages:
       - libusb-1.0-0
+      - libsystemd0
+      - libudev1
+
+  #pcscd:
+  #  source: .
+  #  plugin: autotools
+  #  override-pull: |
+  #    snapcraftctl pull
+  #    D_URL="https://pcsclite.apdu.fr/files/"
+  #    VER="$(wget -O- -q $D_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+  #    echo "$VER"
+  #    echo "$D_URL$VER"
+  #    # D_FILE="$D_URL$VER"
+  #    # wget -O- -q $D_FILE | xzcat | tar x --strip-components=1
+  #    D_FILE="$D_URL$VER"
+  #    wget -O $VER -q $D_FILE
+  #    if [[ $VER == *.xz ]]; then
+  #      xzcat $VER | tar x --strip-components=1
+  #    elif [[ $VER == *.bz2 ]]; then
+  #      bzcat $VER | tar x --strip-components=1
+  #    elif [[ $VER == *.gz ]]; then
+  #      tar xzf $VER --strip-components=1
+  #    else
+  #      echo "Unsupported file format"
+  #      exit 1
+  #    fi
+  #  autotools-configure-parameters:
+  #    - --prefix=/usr/
+  #    - --includedir=/usr/include
+  #    - --enable-ipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
+  #    - --enable-confdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/reader.conf.d
+  #  override-build: |
+  #    snapcraftctl build
+  #  organize:
+  #    $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
+  #    $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/pcscd/COPYING
+  #    $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/pcscd/AUTHORS
+  #    $SNAPCRAFT_PART_SRC/GPL-3.0.txt: usr/share/doc/pcscd/GPL-3.0.txt
+  #  build-packages:
+  #    - libsystemd-dev
+  #    - libudev-dev
+  #    - libusb-1.0-0-dev
+  #    - autoconf 
+  #    - automake 
+  #    - libtool 
+  #    - pkg-config 
+  #    - m4
+  #  stage-packages:
+  #    - libusb-1.0-0
 
   acsccid:
     source: .
@@ -206,20 +264,20 @@ parts:
           SF_URL="https://sourceforge.net/projects/acsccid/files/acsccid"
           VER="$(wget -O- -q $SF_URL | html2text | grep -A1 Parent_folder | tail -1 | sed 's/ .*$//')"
           D_URL="https://sourceforge.net/projects/acsccid/files/acsccid/$VER/acsccid-$VER.tar.bz2"
-          # wget -O- -q $D_URL | bzcat | tar x --strip-components=1
           echo "$D_URL"
-          D_FILE="$D_URL"
-          wget -O $VER -q $D_FILE
-          if [[ $VER == *.xz ]]; then
-            xzcat $VER | tar x --strip-components=1
-          elif [[ $VER == *.bz2 ]]; then
-            bzcat $VER | tar x --strip-components=1
-          elif [[ $VER == *.gz ]]; then
-            tar xzf $VER --strip-components=1
-          else
-            echo "Unsupported file format"
-            exit 1
-          fi
+          wget -O- -q $D_URL | bzcat | tar x --strip-components=1
+          # D_FILE="$D_URL"
+          # wget -O $VER.tar.bz -q $D_FILE
+          # if [[ $VER == *.xz ]]; then
+          #   xzcat $VER | tar x --strip-components=1
+          # elif [[ $VER == *.bz2 ]]; then
+          #   bzcat $VER | tar x --strip-components=1
+          # elif [[ $VER == *.gz ]]; then
+          #   tar xzf $VER --strip-components=1
+          # else
+          #   echo "Unsupported file format"
+          #   exit 1
+          # fi
     organize:
       $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/acsccid/AUTHORS
       $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/acsccid/COPYING
