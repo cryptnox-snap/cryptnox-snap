@@ -162,7 +162,7 @@ parts:
       echo "$VER"
       echo "$D_URL$VER"
       D_FILE="$D_URL$VER"
-      wget -O- -q $D_FILE | bzcat | tar x --strip-components=1
+      wget -O- -q $D_FILE | xzcat | tar x --strip-components=1
     autotools-configure-parameters:
       - --prefix=/usr/
       - --includedir=/usr/include
@@ -219,8 +219,7 @@ parts:
       echo "$VER"
       echo "$C_URL$VER"
       C_FILE="$C_URL$VER"
-      wget -O- -q $C_FILE | bzcat | tar x --strip-components=1
-    plugin: autotools
+      wget -O- -q $C_FILE | xzcat | tar x --strip-components=1
     autotools-configure-parameters:
       - --prefix=/usr/
     after: [ acsccid ]
@@ -245,7 +244,6 @@ parts:
       echo "$T_URL$VER"
       T_FILE="$T_URL$VER"
       wget -O- -q $T_FILE | bzcat | tar x --strip-components=1
-    after: [ ccid ]
     autotools-configure-parameters:
       - --prefix=/usr/
       - --includedir=/usr/include
