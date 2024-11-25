@@ -1,5 +1,5 @@
 name: cryptnox
-base: core24
+base: core20
 adopt-info: cryptnox-clean
 summary: Cryptnox Card
 description: |
@@ -41,19 +41,13 @@ grade: stable
 confinement: strict
   #confinement: devmode
 
+# architectures:
+#   - build-on: amd64
+#     build-for: amd64
+  
 architectures:
   - build-on: amd64
     run-on: amd64
-  
-  # - build-on: arm64
-  #   run-on: arm64
-  
-  # - build-on: i386
-  #   run-on: i386
-  
-  #  - build-on: armhf
-  #    run-on: armhf
-  #    build-error: ignore
 
 slots:
   socket:
@@ -156,33 +150,33 @@ parts:
   pcscd:
     source: .
     plugin: meson
+    # plugin: autotools
     override-pull: |
-      craftctl default
+      snapcraftctl pull
       D_URL="https://pcsclite.apdu.fr/files/"
-      VER="$(wget -O- -q $D_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+      # VER="$(wget -O- -q $D_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+      # D_FILE="$D_URL$VER"
+      ## FIXED VERSION
+      VER="pcsc-lite-2.3.0.tar.xz"
       echo "$VER"
       echo "$D_URL$VER"
-      D_FILE="$D_URL$VER"
-      wget -O $VER -q $D_FILE
-      if [[ $VER == *.xz ]]; then
-        xzcat $VER | tar x --strip-components=1
-      elif [[ $VER == *.bz2 ]]; then
-        bzcat $VER | tar x --strip-components=1
-      elif [[ $VER == *.gz ]]; then
-        tar xzf $VER --strip-components=1
-      else
-        echo "Unsupported file format"
-        exit 1
-      fi
+      D_FILE="$D_URL/$VER"
+      wget -O- -q $D_FILE | xzcat | tar x --strip-components=1
     meson-parameters:
-      - --prefix=/usr/
-      - --includedir=/usr/include
-      - --enable-ipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
-      - --enable-confdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/reader.conf.d
-      # - --prefix=/usr
-      # - -Dipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
-      # - -Dserialconfdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/reader.conf.d
-      # - -Dusbdropdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/lib/pcsc/drivers
+      - --prefix=/usr
+      - -Dipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
+      - -Dserialconfdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/reader.conf.d
+      - -Dusbdropdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/lib/pcsc/drivers
+      - -Dsystemdunit=system
+      - -Dlibudev=false
+      - -Dlibusb=true # Using libudev instead
+      - -Dembedded=true
+      - -Dserial=true
+      - -Dusb=true
+      - -Dpolkit=false # Disable polkit for snap
+      # - -Dfilter_names=true
+    override-build: |
+      snapcraftctl build
     organize:
       $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
       $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/pcscd/COPYING
@@ -197,57 +191,14 @@ parts:
       - ninja-build
       - flex
       - autoconf-archive
+      - libtool 
+      - libpolkit-gobject-1-dev
+      - libc6-dev
     stage-packages:
+      - libudev1
       - libusb-1.0-0
       - libsystemd0
-      - libudev1
-
-  #pcscd:
-  #  source: .
-  #  plugin: autotools
-  #  override-pull: |
-  #    craftctl default
-  #    D_URL="https://pcsclite.apdu.fr/files/"
-  #    VER="$(wget -O- -q $D_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
-  #    echo "$VER"
-  #    echo "$D_URL$VER"
-  #    # D_FILE="$D_URL$VER"
-  #    # wget -O- -q $D_FILE | xzcat | tar x --strip-components=1
-  #    D_FILE="$D_URL$VER"
-  #    wget -O $VER -q $D_FILE
-  #    if [[ $VER == *.xz ]]; then
-  #      xzcat $VER | tar x --strip-components=1
-  #    elif [[ $VER == *.bz2 ]]; then
-  #      bzcat $VER | tar x --strip-components=1
-  #    elif [[ $VER == *.gz ]]; then
-  #      tar xzf $VER --strip-components=1
-  #    else
-  #      echo "Unsupported file format"
-  #      exit 1
-  #    fi
-  #  autotools-configure-parameters:
-  #    - --prefix=/usr/
-  #    - --includedir=/usr/include
-  #    - --enable-ipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
-  #    - --enable-confdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/reader.conf.d
-  #  override-build: |
-  #    craftctl default
-  #  organize:
-  #    $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
-  #    $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/pcscd/COPYING
-  #    $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/pcscd/AUTHORS
-  #    $SNAPCRAFT_PART_SRC/GPL-3.0.txt: usr/share/doc/pcscd/GPL-3.0.txt
-  #  build-packages:
-  #    - libsystemd-dev
-  #    - libudev-dev
-  #    - libusb-1.0-0-dev
-  #    - autoconf 
-  #    - automake 
-  #    - libtool 
-  #    - pkg-config 
-  #    - m4
-  #  stage-packages:
-  #    - libusb-1.0-0
+      - libpolkit-gobject-1-0
 
   acsccid:
     source: .
@@ -256,13 +207,17 @@ parts:
       - --prefix=/usr/
     after: [ pcscd ]
     override-pull: |
-          craftctl default
+          snapcraftctl pull
           # get the latest upstream version
           SF_URL="https://sourceforge.net/projects/acsccid/files/acsccid"
-          VER="$(wget -O- -q $SF_URL | html2text | grep -A1 Parent_folder | tail -1 | sed 's/ .*$//')"
+          # VER="$(wget -O- -q $SF_URL | html2text | grep -A1 Parent_folder | tail -1 | sed 's/ .*$//')"
+          ## FIXED VERSION
+          VER=1.1.11
           D_URL="https://sourceforge.net/projects/acsccid/files/acsccid/$VER/acsccid-$VER.tar.bz2"
           echo "$D_URL"
           wget -O- -q $D_URL | bzcat | tar x --strip-components=1
+    override-build: |
+      snapcraftctl build
     organize:
       $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/acsccid/AUTHORS
       $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/acsccid/COPYING
@@ -279,37 +234,32 @@ parts:
 
   ccid:
     source: .
-    plugin: meson
+    plugin: autotools
+    # plugin: meson
     override-pull: |
-      craftctl default
+      snapcraftctl pull
       C_URL="https://ccid.apdu.fr/files/"
-      VER="$(wget -O- -q $C_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+      # VER="$(wget -O- -q $C_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+      # C_FILE="$D_URL$VER"
+      ## FIXED VERSION
+      VER=ccid-1.6.1.tar.xz
       echo "$VER"
-      echo "$C_URL$VER"
-      C_FILE="$C_URL$VER"
-      #wget -O- -q $C_FILE | xzcat | tar x --strip-components=1
-      echo "$C_URL$VER"
-      D_FILE="$C_URL$VER"
-      wget -O $VER -q $D_FILE
-      if [[ $VER == *.xz ]]; then
-        xzcat $VER | tar x --strip-components=1
-      elif [[ $VER == *.bz2 ]]; then
-        bzcat $VER | tar x --strip-components=1
-      elif [[ $VER == *.gz ]]; then
-        tar xzf $VER --strip-components=1
-      else
-        echo "Unsupported file format"
-        exit 1
-      fi
-    # autotools-configure-parameters:
-    #   - --prefix=/usr/
-    meson-parameters:
-      - --prefix=/usr
+      C_FILE="$C_URL/$VER"
+      wget -O- -q $C_FILE | xzcat | tar x --strip-components=1
+    autotools-configure-parameters:
+      - LDFLAGS="-lpthread"
+      - --prefix=/usr/
+    # meson-parameters: [--prefix=/usr]
     after: [ acsccid ]
     organize:
       $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/ccid/AUTHORS
       $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/ccid/COPYING
     build-packages:
+      - meson
+      - ninja-build
+      - pkg-config
+      - gcc
+      - libc6-dev
       - libusb-1.0-0-dev
     stage-packages:
       - libusb-1.0-0
@@ -319,26 +269,29 @@ parts:
     plugin: autotools
     after: [ ccid ]
     override-pull: |
-      craftctl default
-      #      T_URL="http://ludovic.rousseau.free.fr/softwares/pcsc-tools/"
+      snapcraftctl pull
+      # craftctl default
       T_URL="https://pcsc-tools.apdu.fr/"
-      VER="$(wget -O- -q $T_URL | html2text | grep -A3 'Source Download' | tail -1 | awk '{print $5}' )"
+      # #VER="$(wget -O- -q $T_URL | html2text | grep -A3 'Source Download' | tail -1 | awk '{print $5}' )"
+      VER=pcsc-tools-1.7.2.tar.bz2
+      T_FILE="$T_URL/$VER"
       echo "$VER"
       echo "$T_URL$VER"
-      T_FILE="$T_URL$VER"
+      wget -O pcsc-tools.tar.gz -q $T_FILE 
+      tar -xvf pcsc-tools.tar.gz --strip-components=1
       # wget -O- -q $T_FILE | bzcat | tar x --strip-components=1
-      D_FILE="$T_URL$VER"
-      wget -O $VER -q $D_FILE
-      if [[ $VER == *.xz ]]; then
-        xzcat $VER | tar x --strip-components=1
-      elif [[ $VER == *.bz2 ]]; then
-        bzcat $VER | tar x --strip-components=1
-      elif [[ $VER == *.gz ]]; then
-        tar xzf $VER --strip-components=1
-      else
-        echo "Unsupported file format"
-        exit 1
-      fi
+      #D_FILE="$T_URL$VER"
+      #wget -O $VER -q $D_FILE
+      #if [[ $VER == *.xz ]]; then
+      #  xzcat $VER | tar x --strip-components=1
+      #elif [[ $VER == *.bz2 ]]; then
+      #  bzcat $VER | tar x --strip-components=1
+      #elif [[ $VER == *.gz ]]; then
+      #  tar xzf $VER --strip-components=1
+      #else
+      #  echo "Unsupported file format"
+      #  exit 1
+      #fi
     autotools-configure-parameters:
       - --prefix=/usr/
       - --includedir=/usr/include
@@ -365,6 +318,7 @@ parts:
       - libffi-dev
       - libreadline-dev
       - libsqlite3-dev
+      - liblzma-dev
     build-environment:
       - PATH: /root/.pyenv/bin:$PATH
       - PYTHON_CFLAGS: -fPIC
@@ -375,15 +329,15 @@ parts:
     override-build: |
       eval "$(pyenv init --path)"
       pyenv update
-      pyenv install --force 3.10.6
-      pyenv global 3.10.6
+      pyenv install --force 3.12.7
+      pyenv global 3.12.7
       python3 -m pip install --upgrade pip
     override-stage: |
-      craftctl default
-      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_STAGE/usr/
+      snapcraftctl stage
+      rsync -a /root/.pyenv/versions/3.12.7/* $SNAPCRAFT_STAGE/usr/
     override-prime: |
-      craftctl default
-      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_PRIME/usr/
+      snapcraftctl prime
+      rsync -a /root/.pyenv/versions/3.12.7/* $SNAPCRAFT_PRIME/usr/
 
   python-deps:
     plugin: nil
@@ -400,20 +354,28 @@ parts:
       - PATH: /root/.pyenv/bin:$PATH
     override-build: |
       eval "$(pyenv init --path)"
-      pyenv global 3.10.6
+      pyenv global 3.12.7
+      # Custom Block 2.0.3 
       python3 -m pip download --no-binary :all: pyscard==2.0.3
       tar -xvf pyscard*.tar*
       cd pyscard-2.0.3
       wget https://gist.githubusercontent.com/kokoye2007/75ef6722fb123257552dd4e7040fbb79/raw/3b0e420855316c41b98c6223cf0f5686d49f0378/pyscard-2.0.3-patch.patch
       patch setup.py ./pyscard-2.0.3-patch.patch
+      # Custom Block 2.0.3
+      python3 -m pip install --upgrade pipenv
+      python3 -m pip install --upgrade pip
+      python3 -m pip install setuptools
+
       python3 setup.py build
       python3 setup.py install
     override-stage: |
-      craftctl default
-      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_STAGE/usr/
+      snapcraftctl stage
+      # craftctl default
+      rsync -a /root/.pyenv/versions/3.12.7/* $SNAPCRAFT_STAGE/usr/
     override-prime: |
-      craftctl default
-      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_PRIME/usr/
+      snapcraftctl prime
+      # craftctl default
+      rsync -a /root/.pyenv/versions/3.12.7/* $SNAPCRAFT_PRIME/usr/
 
   python-cryptnox:
     plugin: nil
@@ -431,7 +393,7 @@ parts:
       - PATH: /root/.pyenv/bin:$PATH
     override-build: |
       eval "$(pyenv init --path)"
-      pyenv global 3.10.6
+      pyenv global 3.12.7
       python3 -m pip install --upgrade pipenv
       python3 -m pip install --upgrade pip
 
@@ -448,11 +410,13 @@ parts:
       python3 -m pip install cryptnoxpro
 
     override-stage: |
-      craftctl default
-      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_STAGE/usr/
+      snapcraftctl stage
+      # craftctl default
+      rsync -a /root/.pyenv/versions/3.12.7/* $SNAPCRAFT_STAGE/usr/
     override-prime: |
-      craftctl default
-      rsync -a /root/.pyenv/versions/3.10.6/* $SNAPCRAFT_PRIME/usr/
+      snapcraftctl prime
+      # craftctl default
+      rsync -a /root/.pyenv/versions/3.12.7/* $SNAPCRAFT_PRIME/usr/
 
   clean:
     plugin: nil
@@ -460,24 +424,25 @@ parts:
     override-prime: |
      set -eux
      cd $SNAPCRAFT_PRIME/
-     find . -type f -exec sed -i 's|/root/.pyenv/versions/3.10.6/bin/python3|/snap/cryptnox/current/usr/bin/python3|g' {} \;
+     find . -type f -exec sed -i 's|/root/.pyenv/versions/3.12.7/bin/python3|/snap/cryptnox/current/usr/bin/python3|g' {} \;
 
   cryptnox-clean:
     plugin: nil
     after: [ clean ]
     override-pull: |
-      craftctl default
-      stamp=$(date +%Y%m%d-%H%M%S)
+      snapcraftctl pull
+      # craftctl default
+      stamp=$(date +%Y%m%d_%H%M%S)
       #version="$(git describe --always | sed -e 's/-/+git/;y/-/./')"
       #[ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
       #snapcraftctl set-version "$stamp-$version"
-      # snapcraftctl set-version "$stamp"
-      craftctl set "$stamp"
-      craftctl set grade=stable
+      snapcraftctl set-version "$stamp"
+      # craftctl set version="$stamp"
+      # craftctl set grade=stable
       #snapcraftctl set-grade "$grade"
-      #    override-prime: |
-      #      set -eux 
-      #      cp $SNAPCRAFT_PROJECT_DIR/local/demo $SNAPCRAFT_PRIME/usr/bin/demo
-      #      mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
-      #      echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533_usb.conf
-      #
+      override-prime: |
+        set -eux 
+        # cp $CRAFT_PROJECT_DIR/local/demo $CRAFT_PRIME/usr/bin/demo
+        mkdir -p $SNAPCRAFT_PRIME/etc/modprobe.d/ || true
+        echo -e "install nfc /bin/false\ninstall pn533 /bin/false\ninstall pn533_usb /bin/false" | tee $SNAPCRAFT_PRIME/etc/modprobe.d/blacklist-pn533_usb.conf
+      

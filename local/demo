@@ -23,7 +23,7 @@ blacklist(){
 	sudo modprobe -r pn533_usb
 	sudo modprobe -r pn533
 	sudo modprobe -r nfc
-	sudo lsmob | grep -i "pn533"
+	sudo lsmod | grep -i "pn533"
 }
 
 connect(){
