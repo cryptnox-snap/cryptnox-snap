@@ -1,5 +1,5 @@
 name: cryptnox
-base: core22  # Upgraded from core20
+base: core24  # Upgraded from core20
 adopt-info: version-clean
 summary: Cryptnox Card
 website: https://www.cryptnox.com
@@ -35,11 +35,11 @@ description: |
 grade: stable
 confinement: strict
 
-architectures:
-  - build-on: amd64
-    build-for: amd64
-  - build-on: arm64
-    build-for: arm64
+platforms:
+  amd64:
+  arm64:
+    build-on: [amd64, arm64]
+    build-for: [arm64]
 
 slots:
   pcscd-socket:
@@ -152,7 +152,7 @@ parts:
       # - -Dlibsystemd=true
       # - -Dsystemdunit=system
     organize:
-      $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
+      # $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
       $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/pcscd/COPYING
       $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/pcscd/AUTHORS
       $SNAPCRAFT_PART_SRC/GPL-3.0.txt: usr/share/doc/pcscd/GPL-3.0.txt
