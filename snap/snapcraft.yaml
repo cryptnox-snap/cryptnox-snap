@@ -161,6 +161,11 @@ parts:
       echo "$D_URL/$VER"
       D_FILE="$D_URL/$VER"
       wget -O- -q $D_FILE | xzcat | tar x --strip-components=1
+    organize:
+      $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
+      $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/pcscd/COPYING
+      $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/pcscd/AUTHORS
+      $SNAPCRAFT_PART_SRC/GPL-3.0.txt: usr/share/doc/pcscd/GPL-3.0.txt
     build-packages:
       - html2text
       - tar
@@ -195,6 +200,9 @@ parts:
       D_URL="https://sourceforge.net/projects/acsccid/files/acsccid/$VER/acsccid-$VER.tar.bz2"
       echo "$D_URL"
       wget -O- -q $D_URL | bzcat | tar x --strip-components=1
+    organize:
+      $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/acsccid/AUTHORS
+      $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/acsccid/COPYING
     build-packages:
       - html2text
       - tar
@@ -221,6 +229,9 @@ parts:
       - LDFLAGS="-lpthread"
       - --prefix=/usr/
     after: [ acsccid ]
+    organize:
+      $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/ccid/AUTHORS
+      $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/ccid/COPYING
     build-packages:
       - html2text
       - tar
