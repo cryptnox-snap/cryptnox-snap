@@ -152,7 +152,7 @@ parts:
       # - -Dlibsystemd=true
       # - -Dsystemdunit=system
     organize:
-      # $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
+      $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
       $SNAPCRAFT_PART_SRC/COPYING: usr/share/doc/pcscd/COPYING
       $SNAPCRAFT_PART_SRC/AUTHORS: usr/share/doc/pcscd/AUTHORS
       $SNAPCRAFT_PART_SRC/GPL-3.0.txt: usr/share/doc/pcscd/GPL-3.0.txt
@@ -204,6 +204,7 @@ parts:
       - flex
       - perl
       - pkg-config
+      - libpcsclite-dev
     stage-packages:
       - libusb-1.0-0
 
@@ -213,7 +214,7 @@ parts:
     autotools-configure-parameters:
       - LDFLAGS="-lpthread"
       - --prefix=/usr/
-    after: [ acsccid ]
+    after: [acsccid]
     override-pull: |
       snapcraftctl pull
       C_URL="https://ccid.apdu.fr/files/"
@@ -235,7 +236,7 @@ parts:
   pcsc-tools:
     source: .
     plugin: autotools
-    after: [ ccid ]
+    after: [ccid]
     override-pull: |
       snapcraftctl pull
       T_URL="https://pcsc-tools.apdu.fr/"
@@ -380,9 +381,10 @@ parts:
     plugin: nil
     after: [cryptnox]
     override-prime: |
-     set -eux
-     cd $SNAPCRAFT_PRIME/
-     find . -type f -exec sed -i 's|/root/.pyenv/versions/3.12.7/bin/python3|/snap/cryptnox/current/usr/bin/python3|g' {} \;
+      snapcraftctl prime
+      set -eux
+      cd $SNAPCRAFT_PRIME/
+      find . -type f -exec sed -i 's|/root/.pyenv/versions/3.12.7/bin/python3|/snap/cryptnox/current/usr/bin/python3|g' {} \;
 
   version-clean:
     plugin: nil
