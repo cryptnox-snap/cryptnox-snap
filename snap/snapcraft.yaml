@@ -154,12 +154,12 @@ parts:
 
     override-pull: |
       snapcraftctl pull
-      D_URL="https://pcsclite.apdu.fr/files/"
+      D_URL="https://pcsclite.apdu.fr/files"
       # VER="pcsc-lite-2.3.0.tar.xz"
       VER="$(wget -O- -q $D_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
       echo "$VER"
-      echo "$D_URL$VER"
-      D_FILE="$D_URL$VER"
+      echo "$D_URL/$VER"
+      D_FILE="$D_URL/$VER"
       wget -O- -q $D_FILE | xzcat | tar x --strip-components=1
     build-packages:
       - html2text
@@ -211,7 +211,7 @@ parts:
     plugin: autotools
     override-pull: |
       snapcraftctl pull
-      C_URL="https://ccid.apdu.fr/files/"
+      C_URL="https://ccid.apdu.fr/files"
       # VER=ccid-1.6.1.tar.xz
       VER="$(wget -O- -q $C_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
       echo "$VER"
@@ -238,9 +238,9 @@ parts:
     after: [ ccid ]
     override-pull: |
       snapcraftctl pull
-      T_URL="https://pcsc-tools.apdu.fr/"
+      T_URL="https://pcsc-tools.apdu.fr"
       # VER=pcsc-tools-1.7.2.tar.bz2
-      VER="$(wget -O- -q $C_URL | html2text | grep -A1 'Latest version' | tail -1 |  sed 's/ .*$//' )"
+      VER="$(wget -O- -q $T_URL | html2text | grep -A3 'Source Download' | tail -1 | awk '{print $5}' )"
       T_FILE="$T_URL/$VER"
       wget -O- -q $T_FILE | bzcat | tar x --strip-components=1
     autotools-configure-parameters:
