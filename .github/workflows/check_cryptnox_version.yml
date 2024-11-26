@@ -1,0 +1,64 @@
+name: Check Cryptnoxpro Version
+
+on:
+  schedule:
+    # - cron: "*/5 * * * *" # Runs Every 5 minutes (for testing).
+    # - cron: "0 * * * *" # Runs every hour (adjust as needed)
+    # - cron: "0 0 * * *" # Runs Daily at midnight.
+    ##  https://crontab.guru/examples.html
+    - cron: "0 0 * * 6" # At 00:00 on Saturday.
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Get Latest Version from PyPI
+        id: fetch_version
+        run: |
+          LATEST_VERSION=$(curl -s https://pypi.org/pypi/cryptnoxpro/json | jq -r '.info.version')
+          echo "Latest version is $LATEST_VERSION"
+          echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+
+      - name: Check Current Version
+        id: compare_versions
+        run: |
+          # Ensure version-cryptnox file exists
+          if [ ! -f version-cryptnox ]; then
+            echo "No version history found, creating file."
+            echo "" > version-cryptnox
+          fi
+
+          CURRENT_VERSION=$(head -n 1 version-cryptnox || echo "")
+          echo "Current version is $CURRENT_VERSION"
+
+          if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
+            echo "No new version available."
+            echo "SKIP=true" >> $GITHUB_ENV
+          else
+            echo "New version available: $LATEST_VERSION"
+            echo "SKIP=false" >> $GITHUB_ENV
+
+      - name: Update Version History
+        if: env.SKIP == 'false'
+        run: |
+          echo "Updating version history with $LATEST_VERSION"
+          echo "$LATEST_VERSION" | cat - version-cryptnox > temp && mv temp version-cryptnox
+
+      - name: Commit and Push Changes
+        if: env.SKIP == 'false'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add version-cryptnox
+          git commit -m "Update version-cryptnox with $LATEST_VERSION"
+          git push
