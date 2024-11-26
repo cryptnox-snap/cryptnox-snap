@@ -390,7 +390,8 @@ parts:
     override-pull: |
       snapcraftctl pull
       vversion=$(curl -s https://pypi.org/pypi/cryptnoxpro/json | jq -r '.info.version')
-      stamp=$vversion-$(date +%Y%m%d%H%M%S)
+      # stamp=$vversion-$(date +%Y%m%d%H%M%S) # TOO LONG
+      stamp=$vversion-$(date +%Y%m%d)
       craftctl set version="$stamp"
       # craftctl set grade=edge
     build-packages:
