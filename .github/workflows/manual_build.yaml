@@ -1,0 +1,62 @@
+name: Manual Build Cryptnoxpro Packages
+
+on:
+  workflow_dispatch: # Manual trigger only
+    inputs:
+      custom_version:
+        description: 'Override version (leave empty to use PyPI version with timestamp)'
+        required: false
+        default: ''
+
+jobs:
+  build-packages:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Get Latest Version from PyPI with Timestamp
+        id: fetch_version
+        run: |
+          if [ -n "${{ github.event.inputs.custom_version }}" ]; then
+            BUILD_VERSION="${{ github.event.inputs.custom_version }}"
+            echo "Using custom version: $BUILD_VERSION"
+          else
+            # Get latest version from PyPI
+            LATEST_VERSION=$(curl -s https://pypi.org/pypi/cryptnoxpro/json | jq -r '.info.version')
+            
+            # Add timestamp in DDMMYYYY format
+            TIMESTAMP=$(date +'%d%m%Y')
+            BUILD_VERSION="${LATEST_VERSION}_${TIMESTAMP}"
+            
+            echo "Using PyPI version with timestamp: $BUILD_VERSION"
+          fi
+          
+          echo "BUILD_VERSION=$BUILD_VERSION" >> $GITHUB_ENV
+          echo "TIMESTAMP=$(date +'%d%m%Y')" >> $GITHUB_ENV
+          
+      - name: Update Manual Version Files
+        run: |
+          # Update the manual version file (overwrite)
+          echo "$BUILD_VERSION" > version-cryptnox-manual
+          
+          # Create/update timestamped version file
+          # echo "$BUILD_VERSION" > version-cryptnox_${{ env.TIMESTAMP }}
+          
+          # Log the manual build in a log file
+          # echo "$(date +'%Y-%m-%d %H:%M:%S') - Manual build: $BUILD_VERSION" >> manual-build-log.txt
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # git add version-cryptnox-manual version-cryptnox_${{ env.TIMESTAMP }} manual-build-log.txt
+          git add version-cryptnox-manual
+          git commit -m "Manual build with version $BUILD_VERSION"
+          git push
