@@ -2,12 +2,8 @@ name: Check Cryptnoxpro Version
 
 on:
   schedule:
-    # - cron: "*/5 * * * *" # Runs Every 5 minutes (for testing).
-    # - cron: "0 * * * *" # Runs every hour (adjust as needed)
-    # - cron: "0 0 * * *" # Runs Daily at midnight.
-    ##  https://crontab.guru/examples.html
-    - cron: "0 0 * * 6" # At 00:00 on Saturday.
-  workflow_dispatch: # Allows manual trigger
+    - cron: "0 0 * * 6"  # Every Saturday at 00:00 UTC
+  workflow_dispatch:     # Manual trigger
 
 jobs:
   check-version:
@@ -17,49 +13,48 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Install jq
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
 
-      - name: Get Latest Version from PyPI
-        id: fetch_version
+      - name: Fetch Latest Version from PyPI
         run: |
           LATEST_VERSION=$(curl -s https://pypi.org/pypi/cryptnoxpro/json | jq -r '.info.version')
-          echo "Latest version is $LATEST_VERSION"
+          if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "null" ]; then
+            echo "Error: Could not fetch version from PyPI"
+            exit 1
+          fi
+          echo "Latest version on PyPI: $LATEST_VERSION"
           echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
 
-      - name: Check Current Version
-        id: compare_versions
+      - name: Read Current Version (if exists)
         run: |
-          # Ensure version-cryptnox file exists
-          if [ ! -f version-cryptnox ]; then
-            echo "No version history found, creating file."
-            echo "" > version-cryptnox
+          if [ -f version-cryptnoxpro ]; then
+            CURRENT_VERSION=$(head -n1 version-cryptnoxpro | tr -d '\r\n ')
+          else
+            CURRENT_VERSION=""
           fi
+          echo "Current tracked version: '$CURRENT_VERSION'"
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
-          CURRENT_VERSION=$(head -n 1 version-cryptnox || echo "")
-          echo "Current version is $CURRENT_VERSION"
-
-          if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
-            echo "No new version available."
+          if [ "$CURRENT_VERSION" = "${{ env.LATEST_VERSION }}" ]; then
             echo "SKIP=true" >> $GITHUB_ENV
           else
-            echo "New version available: $LATEST_VERSION"
             echo "SKIP=false" >> $GITHUB_ENV
           fi
 
-      - name: Update Version History
+      - name: Update version-cryptnoxpro File
         if: env.SKIP == 'false'
         run: |
-          echo "Updating version history with $LATEST_VERSION"
-          echo "$LATEST_VERSION" | cat - version-cryptnox > temp && mv temp version-cryptnox
+          echo "${{ env.LATEST_VERSION }}" > version-cryptnoxpro
+          echo "Updated version-cryptnoxpro to ${{ env.LATEST_VERSION }}"
 
-      - name: Commit and Push Changes
+      - name: Commit and Push New Version
         if: env.SKIP == 'false'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add version-cryptnox
-          git commit -m "Update version-cryptnox with $LATEST_VERSION"
+          git add version-cryptnoxpro
+          git commit -m "feat: bump cryptnoxpro to ${{ env.LATEST_VERSION }}"
           git push
