@@ -1,0 +1,116 @@
+name: Build Debian Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'cryptnox-cli version to build'
+        required: false
+        default: ''
+      release_channel:
+        description: 'Release channel'
+        required: true
+        default: 'edge'
+        type: choice
+        options:
+          - edge
+          - beta
+          - stable
+
+jobs:
+  build-deb:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            name: ubuntu22
+          - os: ubuntu-24.04
+            name: ubuntu24
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            jq \
+            debhelper \
+            dh-python \
+            python3-all \
+            python3-setuptools \
+            python3-pip \
+            python3-venv \
+            pybuild-plugin-pyproject \
+            swig \
+            libpcsclite-dev \
+            pcscd \
+            devscripts \
+            fakeroot
+
+      - name: Get Version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=$(curl -s https://pypi.org/pypi/cryptnox-cli/json | jq -r '.info.version')
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${VERSION}"
+
+      - name: Download and Extract Source
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          pip3 download --no-deps --no-binary :all: "cryptnox-cli==${VERSION}"
+          TAR_FILE=$(ls cryptnox*.tar.gz 2>/dev/null || ls cryptnox_*.tar.gz)
+          tar -xzf "${TAR_FILE}"
+          SRC_DIR=$(find . -maxdepth 1 -type d -name "cryptnox*" ! -name "." | head -1)
+          mv "${SRC_DIR}" "cryptnox-cli-${VERSION}"
+
+      - name: Prepare Debian Files
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          cd "cryptnox-cli-${VERSION}"
+          cp -r ../debian .
+          # Update version in changelog
+          sed -i "s/1.0.3-1/${VERSION}-1/g" debian/changelog
+
+      - name: Build Package
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          cd "cryptnox-cli-${VERSION}"
+          dpkg-buildpackage -us -uc -b
+          # Move debs to workspace root for artifact upload
+          mv ../*.deb ../*.changes . 2>/dev/null || true
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cryptnox-cli-${{ steps.version.outputs.VERSION }}-${{ matrix.name }}
+          path: |
+            cryptnox-cli-${{ steps.version.outputs.VERSION }}/*.deb
+            cryptnox-cli-${{ steps.version.outputs.VERSION }}/*.changes
+          retention-days: 30
+
+  create-release:
+    needs: build-deb
+    if: github.event.inputs.release_channel == 'stable'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: deb-${{ github.event.inputs.version || 'latest' }}
+          name: Debian Packages ${{ github.event.inputs.version || 'latest' }}
+          files: artifacts/**/*.deb
+          draft: false
+          prerelease: ${{ github.event.inputs.release_channel != 'stable' }}

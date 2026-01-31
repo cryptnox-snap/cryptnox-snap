@@ -1,4 +1,4 @@
-name: Check Cryptnoxpro Version
+name: Check Cryptnox-CLI Version
 
 on:
   schedule:
@@ -20,7 +20,7 @@ jobs:
 
       - name: Fetch Latest Version from PyPI
         run: |
-          LATEST_VERSION=$(curl -s https://pypi.org/pypi/cryptnoxpro/json | jq -r '.info.version')
+          LATEST_VERSION=$(curl -s https://pypi.org/pypi/cryptnox-cli/json | jq -r '.info.version')
           if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "null" ]; then
             echo "Error: Could not fetch version from PyPI"
             exit 1
@@ -30,8 +30,8 @@ jobs:
 
       - name: Read Current Version (if exists)
         run: |
-          if [ -f version-cryptnoxpro ]; then
-            CURRENT_VERSION=$(head -n1 version-cryptnoxpro | tr -d '\r\n ')
+          if [ -f version-cryptnox ]; then
+            CURRENT_VERSION=$(head -n1 version-cryptnox | tr -d '\r\n ')
           else
             CURRENT_VERSION=""
           fi
@@ -44,17 +44,17 @@ jobs:
             echo "SKIP=false" >> $GITHUB_ENV
           fi
 
-      - name: Update version-cryptnoxpro File
+      - name: Update version-cryptnox File
         if: env.SKIP == 'false'
         run: |
-          echo "${{ env.LATEST_VERSION }}" > version-cryptnoxpro
-          echo "Updated version-cryptnoxpro to ${{ env.LATEST_VERSION }}"
+          echo "${{ env.LATEST_VERSION }}" > version-cryptnox
+          echo "Updated version-cryptnox to ${{ env.LATEST_VERSION }}"
 
       - name: Commit and Push New Version
         if: env.SKIP == 'false'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add version-cryptnoxpro
-          git commit -m "feat: bump cryptnoxpro to ${{ env.LATEST_VERSION }}"
+          git add version-cryptnox
+          git commit -m "feat: bump cryptnox-cli to ${{ env.LATEST_VERSION }}"
           git push

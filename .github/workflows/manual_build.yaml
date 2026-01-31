@@ -1,4 +1,4 @@
-name: Manual Build Cryptnoxpro Packages
+name: Manual Build Cryptnox-CLI Packages
 
 on:
   workflow_dispatch: # Manual trigger only
@@ -29,7 +29,7 @@ jobs:
             echo "Using custom version: $BUILD_VERSION"
           else
             # Get latest version from PyPI
-            LATEST_VERSION=$(curl -s https://pypi.org/pypi/cryptnoxpro/json | jq -r '.info.version')
+            LATEST_VERSION=$(curl -s https://pypi.org/pypi/cryptnox-cli/json | jq -r '.info.version')
             
             # Add timestamp in DDMMYYYY format
             TIMESTAMP=$(date +'%d%m%Y')
