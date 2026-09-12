@@ -225,6 +225,7 @@ install_pip() {
 
 # Setup card reader (blacklist kernel modules)
 setup_reader() {
+    check_sudo
     log_info "Setting up card reader..."
 
     cat << 'EOF' | sudo tee /etc/modprobe.d/blacklist-nfc.conf > /dev/null
@@ -236,6 +237,160 @@ EOF
 
     log_success "NFC modules blacklisted"
     log_warn "Reboot required for changes to take effect"
+}
+
+# Check installed version
+check_version() {
+    log_info "Checking installed versions..."
+    echo ""
+
+    # Check snap
+    if command -v snap &>/dev/null && snap list cryptnox &>/dev/null 2>&1; then
+        echo -e "Snap:    $(snap list cryptnox 2>/dev/null | tail -1 | awk '{print $2}')"
+    fi
+
+    # Check deb
+    if dpkg -l cryptnox-cli 2>/dev/null | grep -q "^ii"; then
+        echo -e "Deb:     $(dpkg -l cryptnox-cli | grep "^ii" | awk '{print $3}')"
+    fi
+
+    # Check rpm
+    if rpm -q cryptnox-cli &>/dev/null 2>&1; then
+        echo -e "RPM:     $(rpm -q --qf '%{VERSION}' cryptnox-cli)"
+    fi
+
+    # Check pip
+    if pip3 show cryptnox-cli &>/dev/null 2>&1; then
+        echo -e "Pip:     $(pip3 show cryptnox-cli 2>/dev/null | grep "^Version:" | awk '{print $2}')"
+    fi
+
+    # Check PyPI latest
+    LATEST=$(get_latest_version)
+    echo ""
+    echo -e "Latest (PyPI): ${LATEST:-unknown}"
+}
+
+# Uninstall cryptnox
+uninstall() {
+    log_info "Uninstalling cryptnox..."
+
+    local found=false
+
+    # Remove snap
+    if command -v snap &>/dev/null && snap list cryptnox &>/dev/null 2>&1; then
+        log_info "Removing snap package..."
+        sudo snap remove cryptnox
+        found=true
+    fi
+
+    # Remove deb
+    if dpkg -l cryptnox-cli 2>/dev/null | grep -q "^ii"; then
+        log_info "Removing deb package..."
+        sudo apt-get remove -y cryptnox-cli
+        sudo apt-get autoremove -y
+        found=true
+    fi
+
+    # Remove rpm
+    if rpm -q cryptnox-cli &>/dev/null 2>&1; then
+        log_info "Removing rpm package..."
+        if command -v dnf &>/dev/null; then
+            sudo dnf remove -y cryptnox-cli
+        else
+            sudo yum remove -y cryptnox-cli
+        fi
+        found=true
+    fi
+
+    # Remove pip
+    if pip3 show cryptnox-cli &>/dev/null 2>&1; then
+        log_info "Removing pip package..."
+        pip3 uninstall -y cryptnox-cli
+        found=true
+    fi
+
+    if [ "$found" = true ]; then
+        log_success "Uninstall complete"
+    else
+        log_warn "cryptnox not found"
+    fi
+}
+
+# Update cryptnox
+update() {
+    detect_os
+    log_info "Updating cryptnox..."
+
+    # Update snap
+    if command -v snap &>/dev/null && snap list cryptnox &>/dev/null 2>&1; then
+        log_info "Updating snap..."
+        sudo snap refresh cryptnox
+        log_success "Snap updated"
+        return
+    fi
+
+    # Update deb - reinstall
+    if dpkg -l cryptnox-cli 2>/dev/null | grep -q "^ii"; then
+        log_info "Updating deb package..."
+        install_deb
+        return
+    fi
+
+    # Update rpm - reinstall
+    if rpm -q cryptnox-cli &>/dev/null 2>&1; then
+        log_info "Updating rpm package..."
+        install_rpm
+        return
+    fi
+
+    # Update pip
+    if pip3 show cryptnox-cli &>/dev/null 2>&1; then
+        log_info "Updating pip package..."
+        pip3 install --user --upgrade cryptnox-cli
+        log_success "Pip package updated"
+        return
+    fi
+
+    log_warn "cryptnox not installed. Installing now..."
+    auto_install
+}
+
+# Status check
+status() {
+    detect_os
+    echo ""
+    log_info "System Status"
+    echo ""
+
+    # Check pcscd service
+    echo -n "pcscd service: "
+    if systemctl is-active pcscd &>/dev/null; then
+        echo -e "${GREEN}running${NC}"
+    else
+        echo -e "${RED}stopped${NC}"
+    fi
+
+    # Check card readers
+    echo -n "Card readers:  "
+    if command -v pcsc_scan &>/dev/null; then
+        READERS=$(timeout 2 pcsc_scan -r 2>/dev/null | grep -c "Reader" || echo "0")
+        echo "${READERS} detected"
+    elif command -v cryptnox.pcsc-scan &>/dev/null; then
+        READERS=$(timeout 2 cryptnox.pcsc-scan -r 2>/dev/null | grep -c "Reader" || echo "0")
+        echo "${READERS} detected"
+    else
+        echo "pcsc_scan not available"
+    fi
+
+    # Check snap connections
+    if command -v snap &>/dev/null && snap list cryptnox &>/dev/null 2>&1; then
+        echo ""
+        log_info "Snap Connections:"
+        snap connections cryptnox 2>/dev/null | grep -E "raw-usb|hardware-observe" || echo "  (none)"
+    fi
+
+    echo ""
+    check_version
 }
 
 # Auto-detect best installation method
@@ -288,24 +443,32 @@ usage() {
     cat << EOF
 Cryptnox CLI Universal Installer
 
-Usage: $0 [OPTIONS]
+Usage: $0 [COMMAND] [OPTIONS]
 
-Options:
-    --snap      Force Snap installation
-    --deb       Force Deb package installation
-    --rpm       Force RPM/pip installation
-    --pip       Force pip installation
+Commands:
+    (none)      Auto-detect and install
+    --snap      Install via Snap
+    --deb       Install via Deb package
+    --rpm       Install via RPM/pip
+    --pip       Install via pip
+
+    --update    Update to latest version
+    --uninstall Remove cryptnox
+    --version   Show installed versions
+    --status    Show system status
+
     --setup     Setup card reader (blacklist NFC modules)
     --help      Show this help
 
 Environment variables:
-    CRYPTNOX_VERSION    Version to install (default: $VERSION)
+    CRYPTNOX_VERSION    Version to install (default: latest)
 
 Examples:
-    $0              # Auto-detect and install
-    $0 --snap       # Install via Snap
-    $0 --deb        # Install via Deb
-    $0 --setup      # Setup card reader
+    $0                  # Auto-detect and install
+    $0 --snap           # Install via Snap
+    $0 --update         # Update to latest
+    $0 --uninstall      # Remove cryptnox
+    $0 --status         # Check system status
 
 EOF
 }
@@ -322,18 +485,38 @@ main() {
         --snap)
             detect_os
             install_snap
+            echo ""
+            log_success "Installation complete!"
             ;;
         --deb)
             detect_os
             install_deb
+            echo ""
+            log_success "Installation complete!"
             ;;
         --rpm)
             detect_os
             install_rpm
+            echo ""
+            log_success "Installation complete!"
             ;;
         --pip)
             detect_os
             install_pip
+            echo ""
+            log_success "Installation complete!"
+            ;;
+        --update)
+            update
+            ;;
+        --uninstall|--remove)
+            uninstall
+            ;;
+        --version|--check)
+            check_version
+            ;;
+        --status)
+            status
             ;;
         --setup)
             setup_reader
@@ -344,6 +527,8 @@ main() {
             ;;
         "")
             auto_install
+            echo ""
+            log_success "Installation complete!"
             ;;
         *)
             log_error "Unknown option: $1"
@@ -352,8 +537,6 @@ main() {
             ;;
     esac
 
-    echo ""
-    log_success "Installation complete!"
     echo ""
 }
 

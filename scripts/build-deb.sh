@@ -6,6 +6,10 @@
 
 set -e
 
+# Capture script location BEFORE any cd commands
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "${SCRIPT_DIR}")"
+
 VERSION="${1:-1.0.3}"
 PKG_NAME="cryptnox-cli"
 BUILD_DIR="${BUILD_DIR:-$(mktemp -d /tmp/cryptnox-deb-build.XXXXXX)}"
@@ -13,6 +17,7 @@ SKIP_DEPS="${SKIP_DEPS:-false}"
 
 echo "=== Building ${PKG_NAME} ${VERSION} deb package ==="
 echo "Build directory: ${BUILD_DIR}"
+echo "Repo root: ${REPO_ROOT}"
 
 # Cleanup previous build if using default location
 if [[ "${BUILD_DIR}" == /tmp/cryptnox-deb-build.* ]]; then
@@ -42,8 +47,6 @@ mv "${SRC_DIR}" "${DEBIAN_DIR}"
 cd "${DEBIAN_DIR}"
 
 # Copy debian directory from repo root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(dirname "${SCRIPT_DIR}")"
 if [ -d "${REPO_ROOT}/debian" ]; then
     cp -r "${REPO_ROOT}/debian" .
     echo "Copied debian/ from ${REPO_ROOT}"

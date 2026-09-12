@@ -33,3 +33,5 @@ tests/unit/snap/
 tests/unit/stage/
 .vscode
 *.snap
+*.cast
+*.deb
