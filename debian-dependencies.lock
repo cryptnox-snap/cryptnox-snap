@@ -1,0 +1,3 @@
+# Updated automatically by .github/workflows/check_cryptnox_version.yml.
+# The first scheduled run records current Ubuntu 22.04 candidate versions and
+# triggers a rebuild; later runs rebuild only when one of those versions moves.

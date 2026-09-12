@@ -1,60 +1,119 @@
-name: Check Cryptnox-CLI Version
+name: Check package updates
 
 on:
   schedule:
     - cron: "0 0 * * 6"  # Every Saturday at 00:00 UTC
-  workflow_dispatch:     # Manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: package-update-check
+  cancel-in-progress: false
 
 jobs:
-  check-version:
-    runs-on: ubuntu-latest
+  check-updates:
+    # core22 uses the Ubuntu 22.04 (Jammy) archive.
+    runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install jq
+      - name: Check PyPI and Debian package versions
+        id: updates
+        shell: bash
         run: |
+          set -euo pipefail
+
+          latest_version=$(
+            curl --fail --silent --show-error \
+              https://pypi.org/pypi/cryptnox-cli/json |
+              python3 -c \
+                'import json, sys; print(json.load(sys.stdin)["info"]["version"])'
+          )
+          current_version=$(tr -d '[:space:]' < version-cryptnox)
+
+          echo "Tracked cryptnox-cli: ${current_version}"
+          echo "Latest cryptnox-cli:  ${latest_version}"
+
+          if [ "${current_version}" != "${latest_version}" ]; then
+            printf '%s\n' "${latest_version}" > version-cryptnox
+            echo "pypi_updated=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "pypi_updated=false" >> "${GITHUB_OUTPUT}"
+          fi
+
           sudo apt-get update
-          sudo apt-get install -y jq
+          packages=(
+            libudev1
+            libusb-1.0-0
+            libsystemd0
+            libpcsclite1
+            libgetopt-complete-perl
+            libpcsc-perl
+            libintl-perl
+            wget
+          )
 
-      - name: Fetch Latest Version from PyPI
-        run: |
-          LATEST_VERSION=$(curl -s https://pypi.org/pypi/cryptnox-cli/json | jq -r '.info.version')
-          if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "null" ]; then
-            echo "Error: Could not fetch version from PyPI"
-            exit 1
-          fi
-          echo "Latest version on PyPI: $LATEST_VERSION"
-          echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+          : > debian-dependencies.lock.new
+          for package in "${packages[@]}"; do
+            candidate=$(
+              apt-cache policy "${package}" |
+                awk '/Candidate:/ { print $2 }'
+            )
+            if [ -z "${candidate}" ] || [ "${candidate}" = "(none)" ]; then
+              echo "No Jammy candidate found for ${package}" >&2
+              exit 1
+            fi
+            printf '%s=%s\n' "${package}" "${candidate}" \
+              >> debian-dependencies.lock.new
+          done
 
-      - name: Read Current Version (if exists)
-        run: |
-          if [ -f version-cryptnox ]; then
-            CURRENT_VERSION=$(head -n1 version-cryptnox | tr -d '\r\n ')
+          if ! cmp -s \
+            debian-dependencies.lock.new debian-dependencies.lock
+          then
+            mv debian-dependencies.lock.new debian-dependencies.lock
+            echo "debian_updated=true" >> "${GITHUB_OUTPUT}"
+            echo "Debian dependency versions changed."
           else
-            CURRENT_VERSION=""
+            rm debian-dependencies.lock.new
+            echo "debian_updated=false" >> "${GITHUB_OUTPUT}"
+            echo "Debian dependency versions are unchanged."
           fi
-          echo "Current tracked version: '$CURRENT_VERSION'"
-          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
-          if [ "$CURRENT_VERSION" = "${{ env.LATEST_VERSION }}" ]; then
-            echo "SKIP=true" >> $GITHUB_ENV
+      - name: Commit update and trigger image build
+        if: >-
+          steps.updates.outputs.pypi_updated == 'true' ||
+          steps.updates.outputs.debian_updated == 'true'
+        env:
+          PYPI_UPDATED: ${{ steps.updates.outputs.pypi_updated }}
+          DEBIAN_UPDATED: ${{ steps.updates.outputs.debian_updated }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version-cryptnox debian-dependencies.lock
+
+          if [ "${PYPI_UPDATED}" = "true" ] && \
+            [ "${DEBIAN_UPDATED}" = "true" ]
+          then
+            message="build: update cryptnox-cli and Debian dependencies"
+          elif [ "${PYPI_UPDATED}" = "true" ]; then
+            message="build: update cryptnox-cli to $(<version-cryptnox)"
           else
-            echo "SKIP=false" >> $GITHUB_ENV
+            message="build: refresh Debian dependencies"
           fi
 
-      - name: Update version-cryptnox File
-        if: env.SKIP == 'false'
-        run: |
-          echo "${{ env.LATEST_VERSION }}" > version-cryptnox
-          echo "Updated version-cryptnox to ${{ env.LATEST_VERSION }}"
-
-      - name: Commit and Push New Version
-        if: env.SKIP == 'false'
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add version-cryptnox
-          git commit -m "feat: bump cryptnox-cli to ${{ env.LATEST_VERSION }}"
+          git commit -m "${message}"
           git push
+
+      - name: No build required
+        if: >-
+          steps.updates.outputs.pypi_updated != 'true' &&
+          steps.updates.outputs.debian_updated != 'true'
+        run: echo "PyPI and Debian dependencies are already current."

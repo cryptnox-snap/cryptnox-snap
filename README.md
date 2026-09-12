@@ -42,11 +42,23 @@ curl -fsSL https://raw.githubusercontent.com/kokoye2007/cryptnox-snap/main/scrip
 ├── scripts/
 │   └── build-deb.sh         # Local deb build script
 ├── .github/workflows/       # CI/CD
-│   ├── check_cryptnox_version.yml  # Weekly version check
+│   ├── check_cryptnox_version.yml  # Weekly PyPI/Debian update check
 │   ├── manual_build.yaml           # Manual snap build
 │   └── build_deb.yaml              # Deb build workflow
 └── version-cryptnox         # Current tracked version
 ```
+
+## Automatic image rebuilds
+
+Every Saturday, `check_cryptnox_version.yml` checks both the latest
+`cryptnox-cli` release on PyPI and the Ubuntu 22.04 candidate versions of the
+Debian packages staged in the snap. If either set changes, the workflow commits
+the new version state. That commit triggers the repository's connected
+Snapcraft/Launchpad image build.
+
+The snap build reads `version-cryptnox` and installs that exact PyPI version.
+`debian-dependencies.lock` is detection state only: Snapcraft still resolves the
+listed Debian packages from the `core22` archive during the fresh build.
 
 ## Snap Installation
 
