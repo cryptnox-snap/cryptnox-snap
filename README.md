@@ -144,7 +144,7 @@ sudo reboot
 |-----------|---------|-------------|
 | cryptnox-cli | 1.0.3 | Cryptnox CLI from PyPI |
 | pcscd | 2.3.0 | PC/SC Smart Card Daemon |
-| ccid | 1.6.1 | CCID USB driver |
+| ccid | 1.8.3 | CCID USB driver |
 | acsccid | 1.1.11 | ACS card reader driver |
 | pcsc-tools | 1.7.3 | PC/SC debugging tools |
 | Python | 3.12.7 | Python runtime (snap only) |

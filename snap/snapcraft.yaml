@@ -183,15 +183,16 @@ parts:
 
   ccid:
     source: .
-    plugin: autotools
-    autotools-configure-parameters:
-      - LDFLAGS="-lpthread"
+    plugin: meson
+    meson-parameters:
       - --prefix=/usr/
+      # Host udev rules are not used from inside a strictly confined snap.
+      - -Dudev-rules=false
     after: [ acsccid ]
     override-pull: |
       snapcraftctl pull
       C_URL="https://ccid.apdu.fr/files/"
-      VER=ccid-1.6.1.tar.xz
+      VER=ccid-1.8.3.tar.xz
       echo "$VER"
       C_FILE="$C_URL/$VER"
       wget -O- -q $C_FILE | xzcat | tar x --strip-components=1
@@ -203,6 +204,10 @@ parts:
       - gcc
       - libc6-dev
       - libusb-1.0-0-dev
+      - flex
+      - meson
+      - ninja-build
+      - zlib1g-dev
     stage-packages:
       - libusb-1.0-0
 
