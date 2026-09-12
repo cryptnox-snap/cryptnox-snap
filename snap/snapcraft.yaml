@@ -348,8 +348,8 @@ parts:
       python3 -m pip install cryptography --no-binary cryptography
       #python3 -m pip install cryptography --no-binary cryptography
 
-      cryptnox_version=$(tr -d '[:space:]' \
-        < "$SNAPCRAFT_PROJECT_DIR/version-cryptnox")
+      cryptnox_version=$(awk 'NR == 1 { print $1 }' \
+        "$SNAPCRAFT_PROJECT_DIR/version-cryptnox")
       test -n "$cryptnox_version"
       python3 -m pip install "cryptnox-cli==$cryptnox_version"
       #python3 -m pip install cryptnoxpy
@@ -375,8 +375,8 @@ parts:
     after: [clean]
     override-pull: |
       snapcraftctl pull
-      vversion=$(tr -d '[:space:]' \
-        < "$SNAPCRAFT_PROJECT_DIR/version-cryptnox")
+      vversion=$(awk 'NR == 1 { print $1 }' \
+        "$SNAPCRAFT_PROJECT_DIR/version-cryptnox")
       test -n "$vversion"
       # stamp=$vversion-$(date +%Y%m%d%H%M%S) # TOO LONG
       stamp=$vversion-$(date +%Y%m%d)

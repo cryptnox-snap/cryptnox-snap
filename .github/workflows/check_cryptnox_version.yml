@@ -33,7 +33,7 @@ jobs:
               python3 -c \
                 'import json, sys; print(json.load(sys.stdin)["info"]["version"])'
           )
-          current_version=$(tr -d '[:space:]' < version-cryptnox)
+          current_version=$(awk 'NR == 1 { print $1 }' version-cryptnox)
 
           echo "Tracked cryptnox-cli: ${current_version}"
           echo "Latest cryptnox-cli:  ${latest_version}"
