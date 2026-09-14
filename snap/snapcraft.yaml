@@ -39,14 +39,6 @@ slots:
     write:
       - $SNAP_COMMON/pcscd
 
-# Define common plugs to reduce duplication
-# Only request interfaces that are actually needed for USB card readers
-plugs:
-  raw-usb:
-    # Required for USB smart card readers (ACR122U, ACS readers, etc.)
-  hardware-observe:
-    # Required to detect connected hardware
-
 apps:
   pcscd:
     command: usr/sbin/pcscd --foreground --auto-exit
