@@ -22,8 +22,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-22.04
-            name: ubuntu22
           - os: ubuntu-24.04
             name: ubuntu24
     runs-on: ${{ matrix.os }}
@@ -64,7 +62,10 @@ jobs:
       - name: Download and Extract Source
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
-          pip3 download --no-deps --no-binary :all: "cryptnox-cli==${VERSION}"
+          # cryptnox-cli 1.0.4 requires Python >=3.11. Resolve the source
+          # against Python 3.12 explicitly rather than the host default.
+          python3 -m pip download --no-deps --no-binary :all: \
+            --python-version 3.12 "cryptnox-cli==${VERSION}"
           TAR_FILE=$(ls cryptnox*.tar.gz 2>/dev/null || ls cryptnox_*.tar.gz)
           tar -xzf "${TAR_FILE}"
           SRC_DIR=$(find . -maxdepth 1 -type d -name "cryptnox*" ! -name "." | head -1)
