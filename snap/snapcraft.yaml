@@ -230,6 +230,10 @@ parts:
       - libpcsc-perl
       - libintl-perl 
       - wget
+    # libpcsc-perl pulls in Ubuntu's libpcsclite1. Use the pcsc-lite 2.5.1
+    # library built by the pcscd part instead of staging a conflicting copy.
+    stage:
+      - -usr/lib/*/libpcsclite.so.1*
     stage-snaps:
       - debian-multiarch-triplet-provider-launch
       - perl-launch
