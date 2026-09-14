@@ -1,8 +1,13 @@
 name: cryptnox
 base: core22  # Upgraded from core20
 adopt-info: version-clean
+title: Cryptnox Card
 summary: Cryptnox Card
 website: https://www.cryptnox.com
+contact: support@cryptnox.com
+license: LGPL-3.0-or-later
+issues: https://github.com/cryptnox-snap/cryptnox-snap/issues
+source-code: https://github.com/cryptnox-snap/cryptnox-snap
 description: |
   A command-line interface to manage and use Cryptnox smart cards.
   Provides wallets for Bitcoin and Ethereum cryptocurrency management.
