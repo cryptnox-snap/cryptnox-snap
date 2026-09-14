@@ -15,9 +15,29 @@ PKG_NAME="cryptnox-cli"
 BUILD_DIR="${BUILD_DIR:-$(mktemp -d /tmp/cryptnox-deb-build.XXXXXX)}"
 SKIP_DEPS="${SKIP_DEPS:-false}"
 
+# cryptnox-cli 1.0.4 declares Requires-Python <=3.14, which pip interprets
+# as <=3.14.0.  Hosts running Python 3.14.x (for example 3.14.4) therefore
+# need a compatible interpreter for the source download.  Prefer an installed
+# Python 3.12/3.13/3.11 while allowing callers to override the choice.
+if [[ -z "${PYTHON_BIN:-}" ]]; then
+    for candidate in python3.13 python3.12 python3.11; do
+        if command -v "${candidate}" >/dev/null 2>&1; then
+            PYTHON_BIN="$(command -v "${candidate}")"
+            break
+        fi
+    done
+fi
+if [[ -z "${PYTHON_BIN:-}" ]]; then
+    echo "Error: cryptnox-cli ${VERSION} requires Python 3.11-3.14.0." >&2
+    echo "Install python3.11/3.12/3.13 or set PYTHON_BIN to a compatible interpreter." >&2
+    exit 1
+fi
+export PYTHON_BIN
+
 echo "=== Building ${PKG_NAME} ${VERSION} deb package ==="
 echo "Build directory: ${BUILD_DIR}"
 echo "Repo root: ${REPO_ROOT}"
+echo "Python for source download: ${PYTHON_BIN} ($(${PYTHON_BIN} --version 2>&1))"
 
 # Cleanup previous build if using default location
 if [[ "${BUILD_DIR}" == /tmp/cryptnox-deb-build.* ]]; then
@@ -28,7 +48,7 @@ cd "${BUILD_DIR}"
 
 # Download source from PyPI
 echo "Downloading ${PKG_NAME} ${VERSION} from PyPI..."
-pip3 download --no-deps --no-binary :all: "${PKG_NAME}==${VERSION}"
+"${PYTHON_BIN}" -m pip download --no-deps --no-binary :all: "${PKG_NAME}==${VERSION}"
 
 # Extract source
 TAR_FILE=$(ls ${PKG_NAME}*.tar.gz 2>/dev/null || ls ${PKG_NAME//-/_}*.tar.gz)
