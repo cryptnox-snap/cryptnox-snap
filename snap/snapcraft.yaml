@@ -288,14 +288,9 @@ parts:
     override-build: |
       eval "$(pyenv init --path)"
       pyenv global 3.12.7
-      # Custom Block 2.0.3 
-      # python3 -m pip download --no-binary :all: pyscard==2.0.3
-      # tar -xvf pyscard*.tar*
-      # cd pyscard-2.0.3
-      # wget https://gist.githubusercontent.com/kokoye2007/75ef6722fb123257552dd4e7040fbb79/raw/3b0e420855316c41b98c6223cf0f5686d49f0378/pyscard-2.0.3-patch.patch
-      # patch setup.py ./pyscard-2.0.3-patch.patch
-      # Custom Block 2.0.3
-      pyscardfile="https://files.pythonhosted.org/packages/85/80/25d303a786de924cd2f63b791343a91fe4b1eb374a965331debaf32d3ce8/pyscard-2.2.0.tar.gz"
+      # Build pyscard from source so the extension links against the snap's
+      # bundled PC/SC headers and libraries on both amd64 and arm64.
+      pyscardfile="https://files.pythonhosted.org/packages/93/c9/65c68738a94b44b67b3c5e68a815890bbd225f2ae11ef1ace9b61fa9d5f3/pyscard-2.3.1.tar.gz"
       wget -O- "$pyscardfile" | zcat | tar x --strip-components=1
       sed -i \
         -e 's|platform_include_dirs = \["/usr/include/PCSC", "/usr/local/include/PCSC"\]|platform_include_dirs = ["usr/include/PCSC", "usr/local/include/PCSC", "/snap/cryptnox/current/usr/include/PCSC", "/snap/cryptnox/current/usr/local/include/PCSC"]|' \
