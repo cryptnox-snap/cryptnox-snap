@@ -77,6 +77,9 @@ apps:
 
   pcsc-scan:
     command: usr/bin/pcsc_scan
+    command-chain:
+      - bin/debian-multiarch-triplet-provider-launch
+      - bin/perl-launch
     environment:
       LANG: C.UTF-8
     plugs:
@@ -116,6 +119,7 @@ parts:
       - -Dincludedir=/usr/include
       - -Dserialconfdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/reader.conf.d
       - -Dipcdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/pcscd
+      - -Dlibsystemd=false
       - -Dlibudev=false
       - -Dlibusb=true # Using libusb for USB support
       - -Dembedded=false
@@ -123,7 +127,6 @@ parts:
       - -Dusb=true
       - -Dpolkit=false # Disable polkit for snap
       - -Dfilter_names=false
-      # - -Dlibsystemd=true
       # - -Dsystemdunit=system
     organize:
       $SNAPCRAFT_PART_INSTALL/usr/include/PCSC: include
@@ -133,7 +136,7 @@ parts:
     override-pull: |
       snapcraftctl pull
       D_URL="https://pcsclite.apdu.fr/files/"
-      VER="pcsc-lite-2.3.0.tar.xz"
+      VER="pcsc-lite-2.5.1.tar.xz"
       echo "$VER"
       echo "$D_URL$VER"
       D_FILE="$D_URL/$VER"
@@ -164,7 +167,7 @@ parts:
     override-pull: |
       snapcraftctl pull
       SF_URL="https://sourceforge.net/projects/acsccid/files/acsccid"
-      VER=1.1.11
+      VER=1.1.13
       D_URL="https://sourceforge.net/projects/acsccid/files/acsccid/$VER/acsccid-$VER.tar.bz2"
       echo "$D_URL"
       wget -O- -q $D_URL | bzcat | tar x --strip-components=1
@@ -218,7 +221,7 @@ parts:
     override-pull: |
       snapcraftctl pull
       T_URL="https://pcsc-tools.apdu.fr/"
-      VER=pcsc-tools-1.7.3.tar.bz2
+      VER=pcsc-tools-1.7.5.tar.bz2
       T_FILE="$T_URL/$VER"
       wget -O- -q $T_FILE | bzcat | tar x --strip-components=1
     autotools-configure-parameters:
