@@ -1,6 +1,6 @@
-libudev1=249.11-0ubuntu3.22
+libudev1=249.11-0ubuntu3.23
 libusb-1.0-0=2:1.0.25-1ubuntu2
-libsystemd0=249.11-0ubuntu3.22
+libsystemd0=249.11-0ubuntu3.23
 libpcsclite1=1.9.5-3ubuntu1
 libgetopt-complete-perl=0.26-2.1
 libpcsc-perl=1.4.14-5build2
